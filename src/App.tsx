@@ -59,6 +59,7 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import TaskList from "./pages/Task/TaskList";
 import Saas from "./pages/Dashboard/Saas";
+import Upload from "./pages/Documents/Upload";
 
 export default function App() {
   return (
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/crm" element={<Crm />} />
             <Route path="/stocks" element={<Stocks />} />
             <Route path="/saas" element={<Saas />} />
+            <Route path="/document" element={<Upload />} />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />

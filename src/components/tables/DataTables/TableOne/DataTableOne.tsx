@@ -267,7 +267,7 @@ export default function DataTableOne() {
             <TableHeader className="border-t border-gray-100 dark:border-white/[0.05]">
               <TableRow>
                 {[
-                  { key: "name", label: "User" },
+                  { key: "names", label: "User" },
                   { key: "position", label: "Position" },
                   { key: "location", label: "Office" },
                   { key: "age", label: "Age" },

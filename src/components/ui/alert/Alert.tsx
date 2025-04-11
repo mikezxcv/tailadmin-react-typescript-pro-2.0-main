@@ -1,12 +1,14 @@
 import { Link } from "react-router";
+import { CloseIcon } from "../../../icons";
 
 interface AlertProps {
-  variant: "success" | "error" | "warning" | "info"; // Alert type
-  title: string; // Title of the alert
-  message: string; // Message of the alert
-  showLink?: boolean; // Whether to show the "Learn More" link
-  linkHref?: string; // Link URL
-  linkText?: string; // Link text
+  variant: "success" | "error" | "warning" | "info";
+  title: string;
+  message: string;
+  showLink?: boolean;
+  linkHref?: string;
+  linkText?: string;
+  onClose?: () => void; // New prop for closing the alert
 }
 
 const Alert: React.FC<AlertProps> = ({
@@ -16,8 +18,8 @@ const Alert: React.FC<AlertProps> = ({
   showLink = false,
   linkHref = "#",
   linkText = "Learn more",
+  onClose,
 }) => {
-  // Tailwind classes for each variant
   const variantClasses = {
     success: {
       container:
@@ -41,7 +43,6 @@ const Alert: React.FC<AlertProps> = ({
     },
   };
 
-  // Icon for each variant
   const icons = {
     success: (
       <svg
@@ -113,14 +114,14 @@ const Alert: React.FC<AlertProps> = ({
 
   return (
     <div
-      className={`rounded-xl border p-4 ${variantClasses[variant].container}`}
+      className={`relative rounded-xl border p-4 ${variantClasses[variant].container}`}
     >
       <div className="flex items-start gap-3">
         <div className={`-mt-0.5 ${variantClasses[variant].icon}`}>
           {icons[variant]}
         </div>
 
-        <div>
+        <div className="flex-1">
           <h4 className="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">
             {title}
           </h4>
@@ -137,6 +138,16 @@ const Alert: React.FC<AlertProps> = ({
           )}
         </div>
       </div>
+
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-full p-1"
+          aria-label="Close alert"
+        >
+          <CloseIcon className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 };

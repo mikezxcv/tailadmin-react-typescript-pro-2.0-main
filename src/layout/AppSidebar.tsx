@@ -18,6 +18,7 @@ import {
   TableIcon,
   TaskIcon,
   UserCircleIcon,
+  PaperPlaneIcon
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
@@ -41,6 +42,17 @@ const navItems: NavItem[] = [
       { name: "Stocks", path: "/stocks", new: true, pro: true },
       { name: "SaaS", path: "/saas", new: true, pro: true },
     ],
+  },
+  {
+    icon: <PaperPlaneIcon />,
+    name: "Documentos",
+    path: "/document",
+  },
+  // historial de documentos
+  {
+    icon: <DocsIcon />,
+    name: "Historial",
+    path: "/history",
   },
   {
     icon: <CalenderIcon />,
@@ -168,6 +180,7 @@ const supportItems: NavItem[] = [
     path: "/invoice",
   },
 ];
+
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
