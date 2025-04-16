@@ -1,27 +1,30 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import {  EyeCloseIcon, EyeIcon } from "../../icons";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="flex flex-col flex-1">
       <div className="w-full max-w-md pt-10 mx-auto">
-
-      </div>
-      <div className="items-center">
-          <img
-            src="/assets/grupo_sega.jpg"
-            alt="Placeholder"
-          // width={231}
-          // height={48}
-
-          />
-
+        {/* Contenedor para la imagen - solo visible en móvil */}
+        <div className="block lg:hidden">
+          <div className="flex items-center justify-center w-full">
+            <div className="flex flex-col items-center max-w-xs">
+              <img
+                src="/assets/grupo_sega.jpg"
+                alt="Grupo Sega"
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
         </div>
+      </div>
+
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
@@ -72,7 +75,6 @@ export default function SignInForm() {
                 </div>
               </div>
             </form>
-
           </div>
         </div>
       </div>
