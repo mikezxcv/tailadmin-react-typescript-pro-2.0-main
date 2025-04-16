@@ -60,6 +60,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import TaskList from "./pages/Task/TaskList";
 import Saas from "./pages/Dashboard/Saas";
 import Upload from "./pages/Documents/Upload";
+import HistoryInvoice from "./pages/HistoryInvoice/History";
 
 export default function App() {
   return (
@@ -69,13 +70,14 @@ export default function App() {
         <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
-            <Route index path="/" element={<Ecommerce />} />
+            {/* <Route path="/" element={<Upload />} /> */}
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/marketing" element={<Marketing />} />
             <Route path="/crm" element={<Crm />} />
             <Route path="/stocks" element={<Stocks />} />
             <Route path="/saas" element={<Saas />} />
-            <Route path="/document" element={<Upload />} />
+            <Route path="/upload-invoice" element={<Upload />} />
+            <Route path="/history-invoice" element={< HistoryInvoice />} />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
@@ -136,7 +138,8 @@ export default function App() {
           </Route>
 
           {/* Auth Layout */}
-          <Route path="/signin" element={<SignIn />} />
+          <Route  path="/signin" element={<SignIn />} />
+          <Route index  path="/" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route

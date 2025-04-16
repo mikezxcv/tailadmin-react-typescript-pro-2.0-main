@@ -88,7 +88,7 @@ const tableRowData = [
     id: 7,
     user: {
       image: "/images/user/user-26.jpg",
-      name: "William Smith",
+      name: "William John",
     },
     position: "Financial Analyst",
     location: "Seattle",
@@ -194,7 +194,7 @@ export default function DataTableOne() {
     <div className="overflow-hidden bg-white dark:bg-white/[0.03] rounded-xl">
       <div className="flex flex-col gap-2 px-4 py-4 border border-b-0 border-gray-100 dark:border-white/[0.05] rounded-t-xl sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-gray-500 dark:text-gray-400"> Show </span>
+          <span className="text-gray-500 dark:text-gray-400"> Showss </span>
           <div className="relative z-20 bg-transparent">
             <select
               className="w-full py-2 pl-3 pr-8 text-sm text-gray-800 bg-transparent border border-gray-300 rounded-lg appearance-none dark:bg-dark-900 h-9 bg-none shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
@@ -288,11 +288,10 @@ export default function DataTableOne() {
                       </p>
                       <button className="flex flex-col gap-0.5">
                         <svg
-                          className={`text-gray-300 dark:text-gray-700  ${
-                            sortKey === key && sortOrder === "asc"
+                          className={`text-gray-300 dark:text-gray-700  ${sortKey === key && sortOrder === "asc"
                               ? "text-brand-500"
                               : ""
-                          }`}
+                            }`}
                           width="8"
                           height="5"
                           viewBox="0 0 8 5"
@@ -305,11 +304,10 @@ export default function DataTableOne() {
                           />
                         </svg>
                         <svg
-                          className={`text-gray-300 dark:text-gray-700  ${
-                            sortKey === key && sortOrder === "desc"
+                          className={`text-gray-300 dark:text-gray-700  ${sortKey === key && sortOrder === "desc"
                               ? "text-brand-500"
                               : ""
-                          }`}
+                            }`}
                           width="8"
                           height="5"
                           viewBox="0 0 8 5"

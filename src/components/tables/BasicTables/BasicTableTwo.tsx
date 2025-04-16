@@ -61,7 +61,7 @@ const tableRowData: TableRowData[] = [
     id: "DE124322",
     user: {
       initials: "CD",
-      name: "Jane Smith",
+      name: "Jane John",
       email: "janesmith@gmail.com",
     },
     avatarColor: "brand",
@@ -302,8 +302,8 @@ export default function BasicTableTwo() {
                       row.status.type === "Complete"
                         ? "success"
                         : row.status.type === "Pending"
-                        ? "warning"
-                        : "error"
+                          ? "warning"
+                          : "error"
                     }
                     size="sm"
                   >
