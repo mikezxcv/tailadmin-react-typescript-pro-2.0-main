@@ -19,9 +19,9 @@ export default function ExampleFormOne() {
     { value: "template", label: "Option 2" },
     { value: "development", label: "Option 3" },
   ];
-  const handleSelectChange = (value: string) => {
-    console.log("Selected value:", value);
-  };
+  // const handleSelectChange = (value: string) => {
+  //   console.log("Selected value:", value);
+  // };
 
   const handleTextareaChange = (value: string) => {
     setMessage(value);
@@ -52,7 +52,7 @@ export default function ExampleFormOne() {
             <Select
               options={options}
               placeholder="Select an option"
-              onChange={handleSelectChange}
+              // onChange={handleSelectChange}
               defaultValue=""
               className="bg-gray-50 dark:bg-gray-800"
             />

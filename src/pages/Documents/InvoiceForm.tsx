@@ -1,84 +1,362 @@
-import Input from "../../components/form/input/InputField";
-import { useState } from "react";
 import Form from "../../components/form/Form";
+import Input from "../../components/form/input/InputField";
 import ComponentCard from "../../components/common/ComponentCard";
-import TextArea from "../../components/form/input/TextArea";
 import Label from "../../components/form/Label";
 import Select from "../../components/form/Select";
 import Button from "../../components/ui/button/Button";
 import { PaperPlaneIcon } from "../../icons";
+import { useFormValidation } from "../../utils/hooks";
+import {
+    validateRequired,
+    validateMinLength,
+    validatePositiveNumber,
+} from "../../utils/validators";
+import React from "react";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
+// import DatePicker from "../../components/form/date-picker";
 
 
-export default function ExampleFormOne() {
-    const [message, setMessage] = useState<string>("");
-    // modal
+
+export default function ExpenseRegistrationForm() {
+
     const successModal = useModal();
+
+    // Opciones para los selectores
+    const countriesOptions = [
+        { value: "us", label: "Estados Unidos" },
+        { value: "mx", label: "México" },
+        { value: "co", label: "Colombia" },
+        { value: "pe", label: "Perú" },
+        { value: "ar", label: "Argentina" },
+        { value: "cl", label: "Chile" },
+        { value: "br", label: "Brasil" },
+        // Añade más países según sea necesario
+    ];
+
+    const companiesOptions = [
+        { value: "company1", label: "Empresa A" },
+        { value: "company2", label: "Empresa B" },
+        { value: "company3", label: "Empresa C" },
+        // Añade más empresas según sea necesario
+    ];
+
+    const expenseTypesOptions = [
+        { value: "food", label: "Comida" },
+        { value: "transport", label: "Transporte" },
+        { value: "hotel", label: "Hotel" },
+        { value: "office", label: "Material de Oficina" },
+        { value: "other", label: "Otros" },
+        // Añade más tipos según sea necesario
+    ];
+
+    const currenciesOptions = [
+        { value: "USD", label: "Dólar Estadounidense (USD)" },
+        { value: "EUR", label: "Euro (EUR)" },
+        { value: "MXN", label: "Peso Mexicano (MXN)" },
+        { value: "COP", label: "Peso Colombiano (COP)" },
+        { value: "PEN", label: "Sol Peruano (PEN)" },
+        { value: "ARS", label: "Peso Argentino (ARS)" },
+        { value: "CLP", label: "Peso Chileno (CLP)" },
+        { value: "BRL", label: "Real Brasileño (BRL)" },
+        // Añade más monedas según sea necesario
+    ];
+
+    // Inicializar el estado del formulario
+    const {
+        values,
+        errors,
+        handleChange,
+        handleBlur,
+        validateForm,
+        registerField,
+        isFieldInvalid,
+        getFieldError,
+        resetForm
+    } = useFormValidation({
+        expenseDate: "", // Fecha del gasto
+        employee: "", // Empleado que registra
+        country: "", // País donde se generó
+        company: "", // Empresa asociada
+        expenseType: "", // Tipo de gasto
+        localAmount: "", // Monto en moneda local
+        currency: "", // Moneda
+        exchangeRate: "", // Tipo de cambio
+        usdAmount: "", // Monto en USD
+        provider: "", // Proveedor
+
+    });
+
+    // Estado para manejar el archivo
+    // const [file, setFile] = useState<File | null>(null);
+
+
 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Form submitted:");
-        successModal.openModal();
-    };
-    const options = [
-        { value: "marketing", label: "Option 1" },
-        { value: "template", label: "Option 2" },
-        { value: "development", label: "Option 3" },
-    ];
-    const handleSelectChange = (value: string) => {
-        console.log("Selected value:", value);
+
+        // Validar todos los campos antes de enviar
+        const isValid = validateForm();
+
+        if (isValid) {
+            console.log("Formulario de gastos válido, enviando valores:", values);
+
+            // Aquí realizarías la llamada API para crear el registro de gasto
+            // Por ejemplo:
+            // createExpense(values)
+            //   .then(response => {
+            //     console.log("Gasto registrado exitosamente", response);
+            //     resetForm();
+            //   })
+            //   .catch(error => {
+            //     console.error("Error al registrar el gasto", error);
+            //   });
+
+            // Resetear el formulario después de enviar (en producción, haz esto después de recibir respuesta exitosa)
+            successModal.openModal();
+            resetForm();
+            // setFile(null);
+        } else {
+            console.log("El formulario tiene errores:", errors);
+        }
     };
 
-    const handleTextareaChange = (value: string) => {
-        setMessage(value);
-        console.log("Message:", value);
+    const handleClickSuccessModal = () => {
+        successModal.closeModal();
+        resetForm(); // Reiniciar el formulario al cerrar el modal
+        // redirigiar a la ruta http://localhost:5173/document
+        // window.location.href = "http://localhost:5173/documents";
+        window.location.reload(); // Recargar la página para ver los cambios
     };
+
     return (
         <>
-            <ComponentCard title="Datos de la Factura">
+            <ComponentCard title="Registro de Gastos" desc=" Verifica los datos escaneados y completa el formulario para registrar el gasto.">
                 <Form onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        <div className="col-span-2 sm:col-span-1">
-                            <Label htmlFor="firstName">First Name</Label>
-                            <Input type="text" placeholder="Enter first name" id="firstName" />
+                        {/* Fecha del gasto */}
+
+                        <div>
+                            <Label htmlFor="expenseDate">
+                                Fecha del gasto <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                type="date"
+                                placeholder="Seleccione"
+                                name="expenseDate"
+                                id="expenseDate"
+                                value={values.expenseDate}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('expenseDate')}
+                                errorMessage={getFieldError('expenseDate') ?? undefined}
+                                validators={[validateRequired]}
+                                fieldName="Fecha del gasto"
+                                registerField={registerField}
+                            />
                         </div>
+
+                        {/* Empleado */}
                         <div className="col-span-2 sm:col-span-1">
-                            <Label htmlFor="lastName">Last Name</Label>
-                            <Input type="text" placeholder="Enter last name" id="firstName" />
-                        </div>
-                        <div className="col-span-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="employee">
+                                Empleado <span className="text-red-500">*</span>
+                            </Label>
                             <Input
                                 type="text"
-                                placeholder="Enter email address"
-                                id="firstName"
+                                placeholder="Nombre del empleado"
+                                name="employee"
+                                id="employee"
+                                value={values.employee}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('employee')}
+                                errorMessage={getFieldError('employee') ?? undefined}
+                                validators={[validateRequired, validateMinLength(3)]}
+                                fieldName="Empleado"
+                                registerField={registerField}
                             />
                         </div>
-                        <div className="col-span-2">
-                            <Label htmlFor="subject">Subject</Label>
+
+                        {/* País */}
+                        <div className="col-span-2 sm:col-span-1">
+                            <Label htmlFor="country">
+                                País <span className="text-red-500">*</span>
+                            </Label>
                             <Select
-                                options={options}
-                                placeholder="Select an option"
-                                onChange={handleSelectChange}
-                                defaultValue=""
-                                className="bg-gray-50 dark:bg-gray-800"
+                                options={countriesOptions}
+                                placeholder="Seleccionar país"
+                                name="country"
+                                value={values.country}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('country')}
+                                errorMessage={getFieldError('country') ?? undefined}
+                                validators={[validateRequired]}
+                                fieldName="País"
+                                registerField={registerField}
                             />
                         </div>
-                        <div className="col-span-2">
-                            <Label htmlFor="email">Messages</Label>
-                            <TextArea
-                                placeholder="Type your message here..."
-                                rows={6}
-                                value={message}
-                                onChange={handleTextareaChange}
-                                className=" bg-gray-50 dark:bg-gray-800"
+
+                        {/* Empresa */}
+                        <div className="col-span-2 sm:col-span-1">
+                            <Label htmlFor="company">
+                                Empresa <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                                options={companiesOptions}
+                                placeholder="Seleccionar empresa"
+                                name="company"
+                                value={values.company}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('company')}
+                                errorMessage={getFieldError('company') ?? undefined}
+                                validators={[validateRequired]}
+                                fieldName="Empresa"
+                                registerField={registerField}
                             />
                         </div>
+
+                        {/* Tipo de gasto */}
                         <div className="col-span-2">
-                            <Button size="sm" className="w-full">
-                                Send Message
+                            <Label htmlFor="expenseType">
+                                Tipo de gasto <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                                options={expenseTypesOptions}
+                                placeholder="Seleccionar tipo de gasto"
+                                name="expenseType"
+                                value={values.expenseType}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('expenseType')}
+                                errorMessage={getFieldError('expenseType') ?? undefined}
+                                validators={[validateRequired]}
+                                fieldName="Tipo de gasto"
+                                registerField={registerField}
+                            />
+                        </div>
+
+                        {/* Monto local */}
+                        <div className="col-span-2 sm:col-span-1">
+                            <Label htmlFor="localAmount">
+                                Monto local <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                type="number"
+                                placeholder="0.00"
+                                name="localAmount"
+                                id="localAmount"
+                                value={values.localAmount}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('localAmount')}
+                                errorMessage={getFieldError('localAmount') ?? undefined}
+                                validators={[validateRequired, validatePositiveNumber]}
+                                fieldName="Monto local"
+                                registerField={registerField}
+                                step={0.01}
+                                min="0.01"
+                            />
+                        </div>
+
+                        {/* Moneda */}
+                        <div className="col-span-2 sm:col-span-1">
+                            <Label htmlFor="currency">
+                                Moneda <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                                options={currenciesOptions}
+                                placeholder="Seleccionar moneda"
+                                name="currency"
+                                value={values.currency}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('currency')}
+                                errorMessage={getFieldError('currency') ?? undefined}
+                                validators={[validateRequired]}
+                                fieldName="Moneda"
+                                registerField={registerField}
+                            />
+                        </div>
+
+                        {/* Tipo de cambio */}
+                        <div className="col-span-2 sm:col-span-1">
+                            <Label htmlFor="exchangeRate">
+                                Tipo de cambio <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                type="number"
+                                placeholder="1.00"
+                                name="exchangeRate"
+                                id="exchangeRate"
+                                value={values.exchangeRate}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('exchangeRate')}
+                                errorMessage={getFieldError('exchangeRate') ?? undefined}
+                                validators={[validateRequired, validatePositiveNumber]}
+                                fieldName="Tipo de cambio"
+                                registerField={registerField}
+                                step={0.01}
+                                min="0.01"
+                            />
+                        </div>
+
+                        {/* Monto USD (calculado automáticamente) */}
+                        <div className="col-span-2 sm:col-span-1">
+                            <Label htmlFor="usdAmount">
+                                Monto en USD
+                            </Label>
+                            <Input
+                                type="number"
+                                placeholder="0.00"
+                                name="usdAmount"
+                                id="usdAmount"
+                                value={values.usdAmount}
+                                disabled={false} // Este campo es calculado automáticamente
+                                className="text-gray-500 bg-gray-100"
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('usdAmount')}
+                                errorMessage={getFieldError('usdAmount') ?? undefined}
+                                validators={[validateRequired, validatePositiveNumber]}
+                                fieldName="Monto en USD"
+                                registerField={registerField}
+                                step={0.01}
+                                min="0.00"
+                            />
+                        </div>
+
+                        {/* Proveedor */}
+                        <div className="col-span-2">
+                            <Label htmlFor="provider">
+                                Proveedor <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                type="text"
+                                placeholder="Nombre del proveedor"
+                                name="provider"
+                                id="provider"
+                                value={values.provider}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                error={isFieldInvalid('provider')}
+                                errorMessage={getFieldError('provider') ?? undefined}
+                                validators={[validateRequired, validateMinLength(3)]}
+                                fieldName="Proveedor"
+                                registerField={registerField}
+                            />
+                        </div>
+                        {/* Botón de envío */}
+                        <div className="col-span-2">
+                            <Button
+                                size="md"
+                                className="w-full"
+                                type="submit"
+                            >
+                                Registrar Gasto
                                 <PaperPlaneIcon className="size-5" />
                             </Button>
                         </div>
@@ -86,8 +364,9 @@ export default function ExampleFormOne() {
                 </Form>
             </ComponentCard>
             <Modal
+                showCloseButton={false}
                 isOpen={successModal.isOpen}
-                onClose={successModal.closeModal}
+                onClose={handleClickSuccessModal}
                 className="max-w-[600px] p-5 lg:p-10"
             >
                 <div className="text-center">
@@ -126,25 +405,24 @@ export default function ExampleFormOne() {
                         </span>
                     </div>
                     <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90 sm:text-title-sm">
-                        Well Done!
+                        Factura Registrada!
                     </h4>
                     <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-                        Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
-                        felis risus nisi non. Quisque eu ut tempor curabitur.
+                        Tu factura ha sido registrada. Puede seguir su estado desde el historial
+                        mientras espera la validación y aprobación del documento.
                     </p>
 
                     <div className="flex items-center justify-center w-full gap-3 mt-7">
                         <button
+                            onClick={handleClickSuccessModal}
                             type="button"
                             className="flex justify-center w-full px-4 py-3 text-sm font-medium text-white rounded-lg bg-success-500 shadow-theme-xs hover:bg-success-600 sm:w-auto"
                         >
-                            Okay, Got It
+                            Aceptar
                         </button>
                     </div>
                 </div>
             </Modal>
         </>
-
-
     );
 }

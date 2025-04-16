@@ -36,7 +36,7 @@ const DropZoneSingleFile: React.FC<DropZoneSingleFileProps> = ({
             // Simulate upload completion after 2 seconds
             setTimeout(() => {
                 setFileWithStatus({ file, isLoading: false });
-            }, 2000);
+            }, 1000);
         }
     };
 

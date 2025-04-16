@@ -1,13 +1,15 @@
-import type React from "react";
-import type { FC } from "react";
+// src/components/form/input/InputField.tsx
+import React, { useEffect, useRef } from "react";
+import { ValidationFunction } from "../../../utils/validators";
 
 interface InputProps {
   type?: "text" | "number" | "email" | "password" | "date" | "time" | string;
   id?: string;
-  name?: string;
+  name?: string; // Ahora es requerido para la validación
   placeholder?: string;
   value?: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   className?: string;
   min?: string;
   max?: string;
@@ -15,16 +17,21 @@ interface InputProps {
   disabled?: boolean;
   success?: boolean;
   error?: boolean;
+  errorMessage?: string;
   hint?: string;
+  validators?: ValidationFunction[];
+  fieldName?: string;
+  registerField?: (name: string, validators?: ValidationFunction[], fieldName?: string) => void;
 }
 
-const Input: FC<InputProps> = ({
+const Input: React.FC<InputProps> = ({
   type = "text",
   id,
-  name,
+  name = "",
   placeholder,
   value,
   onChange,
+  onBlur,
   className = "",
   min,
   max,
@@ -32,8 +39,25 @@ const Input: FC<InputProps> = ({
   disabled = false,
   success = false,
   error = false,
+  errorMessage,
   hint,
+  validators = [],
+  fieldName,
+  registerField,
 }) => {
+  // Usamos un ref para rastrear si ya hemos registrado este campo
+  const isRegistered = useRef(false);
+
+  useEffect(() => {
+    // Solo registramos el campo una vez
+    if (registerField && validators.length > 0 && !isRegistered.current) {
+      if (name) {
+        registerField(name, validators, fieldName || name);
+      }
+      isRegistered.current = true;
+    }
+  }, [registerField, name, validators, fieldName]);
+
   let inputClasses = ` h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3  dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${className}`;
 
   if (disabled) {
@@ -46,15 +70,18 @@ const Input: FC<InputProps> = ({
     inputClasses += ` bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90  dark:focus:border-brand-800`;
   }
 
+  const displayMessage = errorMessage || hint;
+
   return (
     <div className="relative">
       <input
         type={type}
-        id={id}
+        id={id || name}
         name={name}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         min={min}
         max={max}
         step={step}
@@ -62,17 +89,16 @@ const Input: FC<InputProps> = ({
         className={inputClasses}
       />
 
-      {hint && (
+      {displayMessage && (
         <p
-          className={`mt-1.5 text-xs ${
-            error
+          className={`mt-1.5 text-xs ${error
               ? "text-error-500"
               : success
-              ? "text-success-500"
-              : "text-gray-500"
-          }`}
+                ? "text-success-500"
+                : "text-gray-500"
+            }`}
         >
-          {hint}
+          {displayMessage}
         </p>
       )}
     </div>

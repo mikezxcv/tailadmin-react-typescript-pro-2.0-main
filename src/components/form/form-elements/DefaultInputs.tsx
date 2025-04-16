@@ -13,9 +13,9 @@ export default function DefaultInputs() {
     { value: "template", label: "Template" },
     { value: "development", label: "Development" },
   ];
-  const handleSelectChange = (value: string) => {
-    console.log("Selected value:", value);
-  };
+  // const handleSelectChange = (value: string) => {
+  //   console.log("Selected value:", value);
+  // };
 
   return (
     <ComponentCard title="Default Inputs">
@@ -33,7 +33,7 @@ export default function DefaultInputs() {
           <Select
             options={options}
             placeholder="Select an option"
-            onChange={handleSelectChange}
+            // onChange={handleSelectChange}
             className="dark:bg-dark-900"
           />
         </div>

@@ -1,10 +1,11 @@
 import { useState } from "react";
+import DropZoneSingleFile from "../../form/form-elements/DropZoneSingleFile";
 
 export interface TabData {
   id: string;
   label: string;
   icon: React.ReactNode;
-  content: string;
+  content: any;
 }
 
 interface TabButtonProps extends TabData {
@@ -93,7 +94,7 @@ const tabData: TabData[] = [
     label: "Notification",
     icon: <NotificationIcon />,
     content:
-      "Notification ipsum dolor sit amet consectetur. Non vitae facilisis urna tortor placerat egestas donec. Faucibus diam gravida enim elit lacus a. Tincidunt fermentum condimentum quis et a et tempus. Tristique urna nisi nulla elit sit libero scelerisque ante.",
+     DropZoneSingleFile
   },
   {
     id: "analytics",
