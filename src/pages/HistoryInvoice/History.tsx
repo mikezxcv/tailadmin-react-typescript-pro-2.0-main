@@ -5,7 +5,7 @@ import { useState, useMemo } from "react";
 import PaginationWithIcon from "../../components/tables/DataTables/TableOne/PaginationWithIcon";
 import { TableHeader, TableRow, TableCell, TableBody } from "../../components/ui/table";
 import Badge from "../../components/ui/badge/Badge";
-import { PencilIcon, TrashBinIcon, DocsIcon, EyeCloseIcon, EyeIcon,} from "../../icons";
+import { PencilIcon, TrashBinIcon, DocsIcon } from "../../icons";
 
 
 const tableRowData = [
@@ -419,7 +419,7 @@ export default function HistoryInvoice() {
                                             <button className="text-gray-500 hover:text-blue-800 dark:text-gray-400 dark:hover:text-blue-900">
                                                 <PencilIcon className="size-5" />
                                             </button>
-                                           <button className="text-gray-500 hover:text-blue-800 dark:text-gray-400 dark:hover:text-blue-900">
+                                            <button className="text-gray-500 hover:text-blue-800 dark:text-gray-400 dark:hover:text-blue-900">
                                                 <DocsIcon className="size-5" />
                                             </button>
                                         </div>

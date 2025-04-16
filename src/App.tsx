@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
-import Ecommerce from "./pages/Dashboard/Ecommerce";
 import Stocks from "./pages/Dashboard/Stocks";
 import Crm from "./pages/Dashboard/Crm";
 import Marketing from "./pages/Dashboard/Marketing";
