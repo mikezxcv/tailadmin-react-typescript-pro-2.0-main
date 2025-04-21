@@ -5,11 +5,12 @@ import Alert from "../../ui/alert/Alert";
 import SpinnerTwo from "../../ui/spinner/SpinnerTwo";
 import { CloseIcon, FileIcon } from "../../../icons";
 
-interface DropZoneSingleFileProps {
+interface DropZoneMultipleFilesProps {
     title?: string;
     description?: string;
     acceptedFileTypes?: { [key: string]: string[] };
     maxFileSize?: number;
+    maxFiles?: number;
 }
 
 interface FileWithStatus {
@@ -17,27 +18,40 @@ interface FileWithStatus {
     isLoading: boolean;
 }
 
-const DropZoneSingleFile: React.FC<DropZoneSingleFileProps> = ({
-    title = "Upload File",
+const DropZoneMultipleFiles: React.FC<DropZoneMultipleFilesProps> = ({
+    title = "Upload Files",
     description = "",
     acceptedFileTypes,
-    maxFileSize = 5 * 1024 * 1024, // Default to 5MB
+    maxFileSize = 5 * 1024 * 1024, // Default to 5MB per file
+    maxFiles = 5, // Default to 5 files
 }) => {
-    const [fileWithStatus, setFileWithStatus] = useState<FileWithStatus | null>(null);
+    const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const onDrop = (acceptedFiles: File[]) => {
-        // Since maxFiles is set to 1, only one file will be accepted
-        const file = acceptedFiles[0];
-        if (file) {
-            setFileWithStatus({ file, isLoading: true });
-            setErrorMessage(null); // Clear any previous error
+        // Map new files to FileWithStatus objects
+        const newFiles = acceptedFiles.map(file => ({
+            file,
+            isLoading: true
+        }));
 
-            // Simulate upload completion after 2 seconds
-            setTimeout(() => {
-                setFileWithStatus({ file, isLoading: false });
-            }, 1000);
-        }
+        // Add new files to existing ones, ensuring we don't exceed maxFiles
+        setFilesWithStatus(prev => {
+            const updatedFiles = [...prev, ...newFiles].slice(0, maxFiles);
+            return updatedFiles;
+        });
+        setErrorMessage(null); // Clear any previous error
+
+        // Simulate upload completion for each file after 1 second
+        setTimeout(() => {
+            setFilesWithStatus(prev =>
+                prev.map(f =>
+                    newFiles.some(nf => nf.file === f.file)
+                        ? { ...f, isLoading: false }
+                        : f
+                )
+            );
+        }, 1000);
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +63,9 @@ const DropZoneSingleFile: React.FC<DropZoneSingleFileProps> = ({
                     `File ${rejection.file.name} is too large. Maximum file size is ${(maxFileSize / (1024 * 1024)).toFixed(2)} MB.`
                 );
             } else if (error.code === "too-many-files") {
-                setErrorMessage("Only one file can be uploaded at a time.");
+                setErrorMessage(`Cannot upload more than ${maxFiles} files.`);
+            } else {
+                setErrorMessage(`File ${rejection.file.name} is not accepted.`);
             }
         });
     };
@@ -64,14 +80,19 @@ const DropZoneSingleFile: React.FC<DropZoneSingleFileProps> = ({
             "image/svg+xml": [],
             "application/pdf": [".pdf"],
         },
-        maxFiles: 1, // Restrict to one file
+        maxFiles, // Allow multiple files up to maxFiles
         maxSize: maxFileSize,
     });
 
-    // Remove the file
-    const removeFile = () => {
-        setFileWithStatus(null);
+    // Remove a specific file
+    const removeFile = (fileToRemove: File) => {
+        setFilesWithStatus(prev => prev.filter(f => f.file !== fileToRemove));
         setErrorMessage(null);
+    };
+
+    // Prevent form submission
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
     };
 
     // Convert file size to human-readable format
@@ -86,6 +107,7 @@ const DropZoneSingleFile: React.FC<DropZoneSingleFileProps> = ({
             <div className="transition border border-gray-300 border-dashed cursor-pointer dark:hover:border-brand-500 dark:border-gray-700 rounded-xl hover:border-brand-500">
                 <form
                     {...getRootProps()}
+                    onSubmit={handleFormSubmit}
                     className={`dropzone rounded-xl border-dashed border-gray-300 p-7 lg:p-10
             ${isDragActive
                             ? "border-brand-500 bg-gray-100 dark:bg-gray-800"
@@ -95,7 +117,7 @@ const DropZoneSingleFile: React.FC<DropZoneSingleFileProps> = ({
                 >
                     <input {...getInputProps()} />
                     <div className="dz-message flex flex-col items-center m-0!">
-                        {!fileWithStatus ? (
+                        {filesWithStatus.length === 0 ? (
                             <>
                                 <div className="mb-[22px] flex justify-center">
                                     <div className="flex h-[68px] w-[68px] items-center justify-center rounded-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400">
@@ -115,67 +137,67 @@ const DropZoneSingleFile: React.FC<DropZoneSingleFileProps> = ({
                                     </div>
                                 </div>
                                 <h4 className="mb-3 font-semibold text-gray-800 text-theme-xl dark:text-white/90">
-                                    {isDragActive ? "Suelta el archivo aqui" : "Arrastra y suelta el archivo"}
+                                    {isDragActive ? "Suelta los archivos aquí" : "Arrastra y suelta los archivos"}
                                 </h4>
                                 <span className="text-center mb-5 block w-full max-w-[290px] text-sm text-gray-700 dark:text-gray-400">
-                                    Arrastra y suelta su archivo aquí o{" "}
+                                    Arrastra y suelta tus archivos aquí o{" "}
                                     <span className="font-medium underline text-theme-sm text-brand-500">
-                                        Examina el archivo
+                                        Examina los archivos
                                     </span>{" "}
-                                    (Tamaño Maximo:{" "}
-                                    {(maxFileSize / (1024 * 1024)).toFixed(2)} MB)
+                                    (Tamaño Máximo: {(maxFileSize / (1024 * 1024)).toFixed(2)} MB, Máximo {maxFiles} archivos)
                                 </span>
                             </>
                         ) : (
-                            <div className="w-full">
-                                <div className="flex items-center p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                                    {/* File Icon or Preview */}
-                                    <div className="mr-3">
-                                        {fileWithStatus.isLoading ? (
-                                            <SpinnerTwo size="small" />
-                                        ) : fileWithStatus.file.type.startsWith("image/") ? (
-                                            <img
-                                                src={URL.createObjectURL(fileWithStatus.file)}
-                                                alt={fileWithStatus.file.name}
-                                                className="w-16 h-16 object-cover rounded"
-                                            />
-                                        ) : fileWithStatus.file.type === "application/pdf" ? (
-                                            <FileIcon className="w-16 h-16 text-gray-500" />
-                                        ) : (
-                                            <svg
-                                                className="w-16 h-16 text-gray-500"
-                                                fill="currentColor"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path d="M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6H6zm0 2h7v5h5v11H6V4z" />
-                                            </svg>
-                                        )}
+                            <div className="w-full space-y-2">
+                                {filesWithStatus.map((fileWithStatus, index) => (
+                                    <div key={index} className="flex items-center p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                        {/* File Icon or Preview */}
+                                        <div className="mr-3">
+                                            {fileWithStatus.isLoading ? (
+                                                <SpinnerTwo size="small" />
+                                            ) : fileWithStatus.file.type.startsWith("image/") ? (
+                                                <img
+                                                    src={URL.createObjectURL(fileWithStatus.file)}
+                                                    alt={fileWithStatus.file.name}
+                                                    className="w-16 h-16 object-cover rounded"
+                                                />
+                                            ) : fileWithStatus.file.type === "application/pdf" ? (
+                                                <FileIcon className="w-16 h-16 text-gray-500" />
+                                            ) : (
+                                                <svg
+                                                    className="w-16 h-16 text-gray-500"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path d="M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6H6zm0 2h7v5h5v11H6V4z" />
+                                                </svg>
+                                            )}
+                                        </div>
+
+                                        {/* File Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-gray-800 dark:text-white/90 text-sm truncate">
+                                                {fileWithStatus.file.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {formatFileSize(fileWithStatus.file.size)}
+                                            </p>
+                                        </div>
+
+                                        {/* Remove Button */}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Prevent triggering the dropzone
+                                                removeFile(fileWithStatus.file);
+                                            }}
+                                            className="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                        >
+                                            <CloseIcon className="w-5 h-5" />
+                                        </button>
                                     </div>
-
-                                    {/* File Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-gray-800 dark:text-white/90 text-sm truncate">
-                                            {fileWithStatus.file.name}
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            {formatFileSize(fileWithStatus.file.size)}
-                                        </p>
-                                    </div>
-
-                                    {/* Remove Button */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // Prevent triggering the dropzone
-                                            removeFile();
-                                        }}
-                                        className="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                                    >
-
-                                        <CloseIcon className="w-5 h-5" />
-
-                                    </button>
-                                </div>
+                                ))}
                             </div>
                         )}
                     </div>
@@ -198,4 +220,4 @@ const DropZoneSingleFile: React.FC<DropZoneSingleFileProps> = ({
     );
 };
 
-export default DropZoneSingleFile;
+export default DropZoneMultipleFiles;
