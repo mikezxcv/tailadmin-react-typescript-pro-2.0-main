@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeEvent, FocusEvent, useState, useEffect, useCallback, useMemo } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import DropZoneSingleFile from "../../components/form/form-elements/DropZoneSingleFile";
 import Button from "../../components/ui/button/Button";
-import { Card } from "../../components/ui/card";
 import SpinnerFour from "../../components/ui/spinner/SpinnerFour";
 import { PaperPlaneIcon } from "../../icons";
 import Form from "../../components/form/Form";
@@ -12,40 +12,44 @@ import Select from "../../components/form/Select";
 import Input from "../../components/form/input/InputField";
 import ComponentCard from "../../components/common/ComponentCard";
 import { useFormValidation } from "../../utils/hooks";
-import { validateRequired, validateMinLength, validatePositiveNumber } from "../../utils/validators";
+import { validateRequired, validatePositiveNumber } from "../../utils/validators";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
+import { useExpenseReport, useCurrencyTypes, useExpenseTypes, useLiquidationTypes } from "./api/expense-report.api";
+import { IExpenseReportRequest } from "./interfaces/expense-report.interfaces";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Upload() {
     const [isLoading, setIsLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const successModal = useModal();
+    const { mutate: createExpenseReportApi, isPending } = useExpenseReport();
+    const { data: currencyData } = useCurrencyTypes(true);
+    const { data: expenseTypesData } = useExpenseTypes(true);
+    const { data: liquidationTypesData } = useLiquidationTypes(true);
+    const { userLoggued } = useAuth();
 
     // Array estático con dos facturas y valores iniciales
     const invoices = [
         {
             id: 1,
             expenseDate: "2025-04-01",
-            employee: "Juan Pérez",
-            country: "mx",
-            company: "company1",
+            countryName: "México",
+            companyName: "Proveedor MX",
             localAmount: "1500.00",
-            currency: "MXN",
+            currency: 3, // MXN
             exchangeRate: "20.00",
             usdAmount: "75.00",
-            provider: "Proveedor MX",
         },
         {
             id: 2,
             expenseDate: "2025-04-02",
-            employee: "María Gómez",
-            country: "co",
-            company: "company2",
+            countryName: "Colombia",
+            companyName: "Proveedor CO",
             localAmount: "200000.00",
-            currency: "COP",
+            currency: 4, // COP
             exchangeRate: "4000.00",
             usdAmount: "50.00",
-            provider: "Proveedor CO",
         },
     ];
 
@@ -54,33 +58,12 @@ export default function Upload() {
         [key: number]: { values: any; errors: any };
     }>({});
 
-    // Opciones para los selectores
-    const countriesOptions = [
-        { value: "us", label: "Estados Unidos" },
-        { value: "mx", label: "México" },
-        { value: "co", label: "Colombia" },
-        { value: "pe", label: "Perú" },
-        { value: "ar", label: "Argentina" },
-        { value: "cl", label: "Chile" },
-        { value: "br", label: "Brasil" },
-    ];
+    // Opciones para los selectores (id: number, name: string)
+    const currenciesOptions = currencyData || [];
 
-    const companiesOptions = [
-        { value: "company1", label: "Empresa A" },
-        { value: "company2", label: "Empresa B" },
-        { value: "company3", label: "Empresa C" },
-    ];
+    const expenseTypesOptions = expenseTypesData;
 
-    const currenciesOptions = [
-        { value: "USD", label: "Dólar Estadounidense (USD)" },
-        { value: "EUR", label: "Euro (EUR)" },
-        { value: "MXN", label: "Peso Mexicano (MXN)" },
-        { value: "COP", label: "Peso Colombiano (COP)" },
-        { value: "PEN", label: "Sol Peruano (PEN)" },
-        { value: "ARS", label: "Peso Argentino (ARS)" },
-        { value: "CLP", label: "Peso Chileno (CLP)" },
-        { value: "BRL", label: "Real Brasileño (BRL)" },
-    ];
+    const settlementTypesOptions = liquidationTypesData;
 
     // Validación para los campos globales
     const {
@@ -98,29 +81,25 @@ export default function Upload() {
         settlementType: "",
     });
 
-    // Instancias de useFormValidation para cada factura (nivel superior)
+    // Instancias de useFormValidation para cada factura
     const invoiceForm1 = useFormValidation({
         expenseDate: invoices[0].expenseDate,
-        employee: invoices[0].employee,
-        country: invoices[0].country,
-        company: invoices[0].company,
+        countryName: invoices[0].countryName,
+        companyName: invoices[0].companyName,
         localAmount: invoices[0].localAmount,
         currency: invoices[0].currency,
         exchangeRate: invoices[0].exchangeRate,
         usdAmount: invoices[0].usdAmount,
-        provider: invoices[0].provider,
     });
 
     const invoiceForm2 = useFormValidation({
         expenseDate: invoices[1].expenseDate,
-        employee: invoices[1].employee,
-        country: invoices[1].country,
-        company: invoices[1].company,
+        countryName: invoices[1].countryName,
+        companyName: invoices[1].companyName,
         localAmount: invoices[1].localAmount,
         currency: invoices[1].currency,
         exchangeRate: invoices[1].exchangeRate,
         usdAmount: invoices[1].usdAmount,
-        provider: invoices[1].provider,
     });
 
     // Memoizar el objeto invoiceForms
@@ -136,44 +115,40 @@ export default function Upload() {
     useEffect(() => {
         registerGlobalField("expenseType", [validateRequired], "Tipo de Gasto");
         registerGlobalField("settlementType", [validateRequired], "Tipo de Liquidación");
-    }, [registerGlobalField]);
+    }, []);
 
-    // Registrar validadores para los campos de cada factura (solo una vez)
+    // Registrar validadores para los campos de cada factura
     useEffect(() => {
         invoices.forEach((invoice) => {
             const { registerField } = invoiceForms[invoice.id];
             registerField("expenseDate", [validateRequired], "Fecha del gasto");
-            registerField("employee", [validateRequired, validateMinLength(3)], "Empleado");
-            registerField("country", [validateRequired], "País");
-            registerField("company", [validateRequired], "Empresa");
+            registerField("countryName", [validateRequired], "Nombre del País");
+            registerField("companyName", [validateRequired], "Nombre de la Empresa");
             registerField("localAmount", [validateRequired, validatePositiveNumber], "Monto local");
             registerField("currency", [validateRequired], "Moneda");
             registerField("exchangeRate", [validateRequired, validatePositiveNumber], "Tipo de cambio");
-            registerField("usdAmount", [validatePositiveNumber], "Monto en USD");
-            registerField("provider", [validateRequired, validateMinLength(3)], "Proveedor");
+            registerField("usdAmount", [validateRequired, validatePositiveNumber], "Monto en USD");
         });
-    }, []); // Array de dependencias vacío para ejecutar solo una vez
+    }, []);
 
-    // Inicializar invoiceData solo si no está inicializado
+    // Inicializar invoiceData solo una vez al montar el componente
     useEffect(() => {
-        if (Object.keys(invoiceData).length === 0) {
-            const initialData = invoices.reduce(
-                (acc, invoice) => {
-                    const { values, errors } = invoiceForms[invoice.id];
-                    return {
-                        ...acc,
-                        [invoice.id]: { values, errors },
-                    };
-                },
-                {} as { [key: number]: { values: any; errors: any } }
-            );
-            setInvoiceData(initialData);
-        }
-    }, [invoiceForms, invoiceData]);
+        const initialData = invoices.reduce(
+            (acc, invoice) => {
+                const { values, errors } = invoiceForms[invoice.id];
+                return {
+                    ...acc,
+                    [invoice.id]: { values, errors },
+                };
+            },
+            {} as { [key: number]: { values: any; errors: any } }
+        );
+        setInvoiceData(initialData);
+    }, []); // Array de dependencias vacío para ejecutar solo una vez
 
     // Actualizar datos y errores de las facturas
     const handleInvoiceFormChange = useCallback(
-        (invoiceId: number, field: string, value: string) => {
+        (invoiceId: number, field: string, value: string | number) => {
             const { handleChange, values, errors } = invoiceForms[invoiceId];
             handleChange({ target: { name: field, value } } as ChangeEvent<HTMLInputElement>);
             setInvoiceData((prev) =>
@@ -199,20 +174,6 @@ export default function Upload() {
         },
         [invoiceForms]
     );
-
-    // Opciones para los campos globales
-    const expenseTypesOptions = [
-        { value: "food", label: "Comida" },
-        { value: "transport", label: "Transporte" },
-        { value: "hotel", label: "Hotel" },
-        { value: "office", label: "Material de Oficina" },
-        { value: "other", label: "Otros" },
-    ];
-    const settlementTypesOptions = [
-        { value: "petty-cash", label: "Caja Chica" },
-        { value: "advance", label: "Anticipo" },
-        { value: "reimbursement", label: "Reembolso" },
-    ];
 
     // Determinar si hay errores para habilitar/deshabilitar el botón
     const [hasErrors, setHasErrors] = useState(true);
@@ -267,17 +228,31 @@ export default function Upload() {
         });
 
         if (globalFormValid && allInvoicesValid) {
-            const payload = {
-                expenseType: globalValues.expenseType,
-                settlementType: globalValues.settlementType,
-                invoices: invoices.map((invoice) => ({
-                    invoiceId: invoice.id,
-                    ...invoiceData[invoice.id].values,
-                })),
+            const createExpenseReportRequest: IExpenseReportRequest = {
+                employee_id: Number(userLoggued?.id), // Hardcoded por ahora; reemplazar con valor dinámico si es necesario
+                expense_type_id: Number(globalValues.expenseType),
+                liquidation_type_id: Number(globalValues.settlementType),
+                invoices: invoices.map((invoice) => {
+                    const values = invoiceData[invoice.id].values;
+                    return {
+                        invoice_date: values.expenseDate,
+                        amount_local: Number(values.localAmount),
+                        currency_id_local: Number(values.currency),
+                        amount_usd: Number(values.usdAmount),
+                        exchange_rate: Number(values.exchangeRate),
+                        company_name: values.companyName,
+                        country_name: values.countryName,
+                    };
+                }),
             };
-            console.log("Enviando a la API:", payload);
-            successModal.openModal();
-            resetForm();
+
+            createExpenseReportApi(createExpenseReportRequest, {
+                onSuccess: (data: any) => {
+                    console.log("Factura registrada:", data);
+                    successModal.openModal();
+                    resetForm();
+                }
+            });
         } else {
             console.log("Errores en el formulario:", {
                 globalErrors,
@@ -296,254 +271,229 @@ export default function Upload() {
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-1">
                 {!showForm && (
                     <div className="">
-                        <Card>
-                            <DropZoneSingleFile
-                                title="Sube tu Factura"
-                                description="Carga tu factura en formato PDF o Imagen. No se aceptan archivos de más de 2MB."
-                                acceptedFileTypes={{
-                                    "application/pdf": [],
-                                    "image/*": [],
-                                }}
-                                maxFileSize={2 * 1024 * 1024}
-                            />
-                            <Button
-                                size="sm"
-                                className="w-full mt-4"
-                                variant="success"
-                                disabled={isLoading}
-                                onClick={handleScanClick}
-                            >
-                                {isLoading && <SpinnerFour color="white" />}
-                                {isLoading ? "Cargando..." : "Escanear"}
-                            </Button>
-                        </Card>
+                        <DropZoneSingleFile
+                            title="Sube tu Factura"
+                            description="Carga tu factura en formato PDF o Imagen. No se aceptan archivos de más de 2MB."
+                            acceptedFileTypes={{
+                                "application/pdf": [],
+                                "image/*": [],
+                            }}
+                            maxFileSize={2 * 1024 * 1024}
+                        />
+                        <Button
+                            size="sm"
+                            className="w-full mt-4"
+                            variant="success"
+                            disabled={isLoading}
+                            onClick={handleScanClick}
+                        >
+                            {isLoading && <SpinnerFour color="white" />}
+                            {isLoading ? "Cargando..." : "Escanear"}
+                        </Button>
                     </div>
                 )}
                 {showForm && (
                     <div className="space-y-6 col-span-2">
-                        <Card>
-                            <Form onSubmit={handleSubmit}>
-                                <div className="p-6 border border-gray-200 rounded-xl dark:border-gray-800">
-                                    <h3 className="text-lg font-semibold mb-4">Detalles del Reporte</h3>
-                                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                        <div>
-                                            <Label htmlFor="expenseType">
-                                                Tipo de Gasto <span className="text-red-500">*</span>
-                                            </Label>
-                                            <Select
-                                                options={expenseTypesOptions}
-                                                placeholder="Seleccionar tipo de gasto"
-                                                name="expenseType"
-                                                value={globalValues.expenseType}
-                                                onChange={handleGlobalChange}
-                                                onBlur={handleGlobalBlur}
-                                                error={isGlobalFieldInvalid("expenseType")}
-                                                errorMessage={getGlobalFieldError("expenseType") ?? undefined}
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="settlementType">
-                                                Tipo de Liquidación <span className="text-red-500">*</span>
-                                            </Label>
-                                            <Select
-                                                options={settlementTypesOptions}
-                                                placeholder="Seleccionar tipo de liquidación"
-                                                name="settlementType"
-                                                value={globalValues.settlementType}
-                                                onChange={handleGlobalChange}
-                                                onBlur={handleGlobalBlur}
-                                                error={isGlobalFieldInvalid("settlementType")}
-                                                errorMessage={getGlobalFieldError("settlementType") ?? undefined}
-                                            />
-                                        </div>
+                        <Form onSubmit={handleSubmit}>
+                            <div className="p-6 border border-gray-200 rounded-xl dark:border-gray-800">
+                                <h3 className="text-lg font-semibold mb-4">Detalles del Reporte</h3>
+                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                    <div>
+                                        <Label htmlFor="expenseType">
+                                            Tipo de Gasto <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Select
+                                            options={(expenseTypesOptions || []).map(option => ({
+                                                value: option.id.toString(),
+                                                label: option.name,
+                                            }))}
+                                            placeholder="Seleccionar tipo de gasto"
+                                            name="expenseType"
+                                            value={globalValues.expenseType}
+                                            onChange={handleGlobalChange}
+                                            onBlur={handleGlobalBlur}
+                                            error={isGlobalFieldInvalid("expenseType")}
+                                            errorMessage={getGlobalFieldError("expenseType") ?? undefined}
+                                        />
                                     </div>
-                                    <h3 className="text-lg font-semibold mt-6 mb-4">Facturas</h3>
-                                    <div className="space-y-6">
-                                        {invoices.map((invoice) => {
-                                            const { values, isFieldInvalid, getFieldError } = invoiceForms[invoice.id];
-                                            return (
-                                                <ComponentCard
-                                                    key={invoice.id}
-                                                    title={`Factura ${invoice.id}`}
-                                                    desc="Verifica los datos escaneados y completa el formulario para registrar la factura."
-                                                >
-                                                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                                        <div>
-                                                            <Label htmlFor={`expenseDate-${invoice.id}`}>
-                                                                Fecha del gasto <span className="text-red-500">*</span>
-                                                            </Label>
-                                                            <Input
-                                                                type="date"
-                                                                placeholder="Seleccione"
-                                                                name="expenseDate"
-                                                                id={`expenseDate-${invoice.id}`}
-                                                                value={values.expenseDate}
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "expenseDate", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("expenseDate")}
-                                                                errorMessage={getFieldError("expenseDate") ?? undefined}
-                                                            />
-                                                        </div>
-                                                        <div className="col-span-2 sm:col-span-1">
-                                                            <Label htmlFor={`employee-${invoice.id}`}>
-                                                                Empleado <span className="text-red-500">*</span>
-                                                            </Label>
-                                                            <Input
-                                                                type="text"
-                                                                placeholder="Nombre del empleado"
-                                                                name="employee"
-                                                                id={`employee-${invoice.id}`}
-                                                                value={values.employee}
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "employee", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("employee")}
-                                                                errorMessage={getFieldError("employee") ?? undefined}
-                                                            />
-                                                        </div>
-                                                        <div className="col-span-2 sm:col-span-1">
-                                                            <Label htmlFor={`country-${invoice.id}`}>
-                                                                País <span className="text-red-500">*</span>
-                                                            </Label>
-                                                            <Select
-                                                                options={countriesOptions}
-                                                                placeholder="Seleccionar país"
-                                                                name="country"
-                                                                value={values.country}
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "country", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("country")}
-                                                                errorMessage={getFieldError("country") ?? undefined}
-                                                            />
-                                                        </div>
-                                                        <div className="col-span-2 sm:col-span-1">
-                                                            <Label htmlFor={`company-${invoice.id}`}>
-                                                                Empresa <span className="text-red-500">*</span>
-                                                            </Label>
-                                                            <Select
-                                                                options={companiesOptions}
-                                                                placeholder="Seleccionar empresa"
-                                                                name="company"
-                                                                value={values.company}
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "company", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("company")}
-                                                                errorMessage={getFieldError("company") ?? undefined}
-                                                            />
-                                                        </div>
-                                                        <div className="col-span-2 sm:col-span-1">
-                                                            <Label htmlFor={`localAmount-${invoice.id}`}>
-                                                                Monto local <span className="text-red-500">*</span>
-                                                            </Label>
-                                                            <Input
-                                                                type="number"
-                                                                placeholder="0.00"
-                                                                name="localAmount"
-                                                                id={`localAmount-${invoice.id}`}
-                                                                value={values.localAmount}
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "localAmount", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("localAmount")}
-                                                                errorMessage={getFieldError("localAmount") ?? undefined}
-                                                                step={0.01}
-                                                                min="0.01"
-                                                            />
-                                                        </div>
-                                                        <div className="col-span-2 sm:col-span-1">
-                                                            <Label htmlFor={`currency-${invoice.id}`}>
-                                                                Moneda <span className="text-red-500">*</span>
-                                                            </Label>
-                                                            <Select
-                                                                options={currenciesOptions}
-                                                                placeholder="Seleccionar moneda"
-                                                                name="currency"
-                                                                value={values.currency}
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "currency", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("currency")}
-                                                                errorMessage={getFieldError("currency") ?? undefined}
-                                                            />
-                                                        </div>
-                                                        <div className="col-span-2 sm:col-span-1">
-                                                            <Label htmlFor={`exchangeRate-${invoice.id}`}>
-                                                                Tipo de cambio <span className="text-red-500">*</span>
-                                                            </Label>
-                                                            <Input
-                                                                type="number"
-                                                                placeholder="1.00"
-                                                                name="exchangeRate"
-                                                                id={`exchangeRate-${invoice.id}`}
-                                                                value={values.exchangeRate}
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "exchangeRate", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("exchangeRate")}
-                                                                errorMessage={getFieldError("exchangeRate") ?? undefined}
-                                                                step={0.01}
-                                                                min="0.01"
-                                                            />
-                                                        </div>
-                                                        <div className="col-span-2 sm:col-span-1">
-                                                            <Label htmlFor={`usdAmount-${invoice.id}`}>Monto en USD</Label>
-                                                            <Input
-                                                                type="number"
-                                                                placeholder="0.00"
-                                                                name="usdAmount"
-                                                                id={`usdAmount-${invoice.id}`}
-                                                                value={values.usdAmount}
-                                                                disabled={true}
-                                                                className="text-gray-500 bg-gray-100"
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "usdAmount", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("usdAmount")}
-                                                                errorMessage={getFieldError("usdAmount") ?? undefined}
-                                                                step={0.01}
-                                                                min="0.00"
-                                                            />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <Label htmlFor={`provider-${invoice.id}`}>
-                                                                Proveedor <span className="text-red-500">*</span>
-                                                            </Label>
-                                                            <Input
-                                                                type="text"
-                                                                placeholder="Nombre del proveedor"
-                                                                name="provider"
-                                                                id={`provider-${invoice.id}`}
-                                                                value={values.provider}
-                                                                onChange={(e) => handleInvoiceFormChange(invoice.id, "provider", e.target.value)}
-                                                                onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
-                                                                error={isFieldInvalid("provider")}
-                                                                errorMessage={getFieldError("provider") ?? undefined}
-                                                            />
-                                                        </div>
+                                    <div>
+                                        <Label htmlFor="settlementType">
+                                            Tipo de Liquidación <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Select
+                                            options={(settlementTypesOptions ?? []).map(option => ({
+                                                value: option.id.toString(),
+                                                label: option.name,
+                                            }))}
+                                            placeholder="Seleccionar tipo de liquidación"
+                                            name="settlementType"
+                                            value={globalValues.settlementType}
+                                            onChange={handleGlobalChange}
+                                            onBlur={handleGlobalBlur}
+                                            error={isGlobalFieldInvalid("settlementType")}
+                                            errorMessage={getGlobalFieldError("settlementType") ?? undefined}
+                                        />
+                                    </div>
+                                </div>
+                                <h3 className="text-lg font-semibold mt-6 mb-4">Facturas</h3>
+                                <div className="space-y-6">
+                                    {invoices.map((invoice) => {
+                                        const { values, isFieldInvalid, getFieldError } = invoiceForms[invoice.id];
+                                        return (
+                                            <ComponentCard
+                                                key={invoice.id}
+                                                title={`Factura ${invoice.id}`}
+                                                desc="Verifica los datos escaneados y completa el formulario para registrar la factura."
+                                            >
+                                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                                    <div>
+                                                        <Label htmlFor={`expenseDate-${invoice.id}`}>
+                                                            Fecha del gasto <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            type="date"
+                                                            placeholder="Seleccione"
+                                                            name="expenseDate"
+                                                            id={`expenseDate-${invoice.id}`}
+                                                            value={values.expenseDate}
+                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "expenseDate", e.target.value)}
+                                                            onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
+                                                            error={isFieldInvalid("expenseDate")}
+                                                            errorMessage={getFieldError("expenseDate") ?? undefined}
+                                                        />
                                                     </div>
-                                                </ComponentCard>
-                                            );
-                                        })}
-                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <Label htmlFor={`countryName-${invoice.id}`}>
+                                                            Nombre del País <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Nombre del país"
+                                                            name="countryName"
+                                                            id={`countryName-${invoice.id}`}
+                                                            value={values.countryName}
+                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "countryName", e.target.value)}
+                                                            onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
+                                                            error={isFieldInvalid("countryName")}
+                                                            errorMessage={getFieldError("countryName") ?? undefined}
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <Label htmlFor={`companyName-${invoice.id}`}>
+                                                            Nombre de la Empresa <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Nombre de la empresa"
+                                                            name="companyName"
+                                                            id={`companyName-${invoice.id}`}
+                                                            value={values.companyName}
+                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "companyName", e.target.value)}
+                                                            onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
+                                                            error={isFieldInvalid("companyName")}
+                                                            errorMessage={getFieldError("companyName") ?? undefined}
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <Label htmlFor={`localAmount-${invoice.id}`}>
+                                                            Monto local <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0.00"
+                                                            name="localAmount"
+                                                            id={`localAmount-${invoice.id}`}
+                                                            value={values.localAmount}
+                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "localAmount", e.target.value)}
+                                                            onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
+                                                            error={isFieldInvalid("localAmount")}
+                                                            errorMessage={getFieldError("localAmount") ?? undefined}
+                                                            step={0.01}
+                                                            min="0.01"
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <Label htmlFor={`currency-${invoice.id}`}>
+                                                            Moneda <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Select
+                                                            options={currenciesOptions.map(option => ({
+                                                                value: option.id.toString(),
+                                                                label: option.description,
+                                                            }))}
+                                                            placeholder="Seleccionar moneda"
+                                                            name="currency"
+                                                            value={values.currency.toString()}
+                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "currency", Number(e.target.value))}
+                                                            onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
+                                                            error={isFieldInvalid("currency")}
+                                                            errorMessage={getFieldError("currency") ?? undefined}
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <Label htmlFor={`exchangeRate-${invoice.id}`}>
+                                                            Tipo de cambio <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="1.00"
+                                                            name="exchangeRate"
+                                                            id={`exchangeRate-${invoice.id}`}
+                                                            value={values.exchangeRate}
+                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "exchangeRate", e.target.value)}
+                                                            onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
+                                                            error={isFieldInvalid("exchangeRate")}
+                                                            errorMessage={getFieldError("exchangeRate") ?? undefined}
+                                                            step={0.01}
+                                                            min="0.01"
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <Label htmlFor={`usdAmount-${invoice.id}`}>
+                                                            Monto en USD <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0.00"
+                                                            name="usdAmount"
+                                                            id={`usdAmount-${invoice.id}`}
+                                                            value={values.usdAmount}
+                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "usdAmount", e.target.value)}
+                                                            onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
+                                                            error={isFieldInvalid("usdAmount")}
+                                                            errorMessage={getFieldError("usdAmount") ?? undefined}
+                                                            step={0.01}
+                                                            min="0.00"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </ComponentCard>
+                                        );
+                                    })}
                                 </div>
-                                <div className="flex gap-4 p-6">
-                                    <Button
-                                        size="sm"
-                                        className="w-full"
-                                        variant="primary"
-                                        type="submit"
-                                        disabled={hasErrors}
-                                    >
-                                        Registrar Gasto
-                                        <PaperPlaneIcon className="size-5" />
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        className="w-full"
-                                        variant="secondary"
-                                        onClick={resetForm}
-                                        type="button"
-                                    >
-                                        Volver a Escanear
-                                    </Button>
-                                </div>
-                            </Form>
-                        </Card>
+                            </div>
+                            <div className="flex gap-4 p-6">
+                                <Button
+                                    size="sm"
+                                    className="w-full"
+                                    variant="primary"
+                                    type="submit"
+                                    disabled={hasErrors || isPending}
+                                >
+                                    Registrar Gasto
+                                    <PaperPlaneIcon className="size-5" />
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    className="w-full"
+                                    variant="secondary"
+                                    onClick={resetForm}
+                                    type="button"
+                                >
+                                    Volver a Escanear
+                                </Button>
+                            </div>
+                        </Form>
                     </div>
                 )}
             </div>

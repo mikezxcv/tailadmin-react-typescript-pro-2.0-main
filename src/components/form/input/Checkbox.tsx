@@ -5,8 +5,13 @@ interface CheckboxProps {
   checked: boolean;
   className?: string;
   id?: string;
-  onChange: (checked: boolean) => void;
+  // onChange: (checked: boolean) => void;
   disabled?: boolean;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  name?: string; // Requerido para la validación
+  error?: boolean;
+
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
@@ -14,24 +19,31 @@ const Checkbox: React.FC<CheckboxProps> = ({
   checked,
   id,
   onChange,
+  onBlur,
   className = "",
   disabled = false,
+  name,
+  // error = false,
+
 }) => {
   return (
     <label
-      className={`flex items-center space-x-3 group cursor-pointer ${
-        disabled ? "cursor-not-allowed opacity-60" : ""
-      }`}
+      className={`flex items-center space-x-3 group cursor-pointer ${disabled ? "cursor-not-allowed opacity-60" : ""
+        }`}
     >
+
       <div className="relative w-5 h-5">
         <input
+          name={name}
           id={id}
           type="checkbox"
           className={`w-5 h-5 appearance-none cursor-pointer dark:border-gray-700 border border-gray-300 checked:border-transparent rounded-md checked:bg-brand-500 disabled:opacity-60 
           ${className}`}
           checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
+          onChange={onChange}
+          onBlur={onBlur}
           disabled={disabled}
+
         />
         {checked && (
           <svg

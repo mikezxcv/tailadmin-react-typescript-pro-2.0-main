@@ -18,7 +18,7 @@ export default function ExampleFormWithIcon() {
     console.log("Form submitted:");
   };
 
-  const [isChecked, setIsChecked] = useState(false);
+  const [isChecked] = useState(false);
   return (
     <ComponentCard title="Example Form With Icons">
       <Form onSubmit={handleSubmit}>
@@ -69,7 +69,9 @@ export default function ExampleFormWithIcon() {
           </div>
           <div className="flex justify-between">
             <div className="flex items-center gap-3">
-              <Checkbox checked={isChecked} onChange={setIsChecked} />
+              <Checkbox checked={isChecked}
+              //  onChange={setIsChecked} 
+              />
               <Label className="mb-0"> Remember me</Label>
             </div>
             <div>

@@ -103,11 +103,11 @@ export default function EmailContent() {
     new Array(mailData.length).fill(false)
   );
 
-  const toggleCheck = (index: number, checked: boolean) => {
-    const updated = [...checkedItems];
-    updated[index] = checked;
-    setCheckedItems(updated);
-  };
+  // const toggleCheck = (index: number, checked: boolean) => {
+  //   const updated = [...checkedItems];
+  //   updated[index] = checked;
+  //   setCheckedItems(updated);
+  // };
 
   const toggleStar = (index: number) => {
     const updated = [...starredItems];
@@ -135,7 +135,7 @@ export default function EmailContent() {
                 {/* Custom Checkbox */}
                 <Checkbox
                   checked={checkedItems[index]}
-                  onChange={(checked) => toggleCheck(index, checked)}
+                  // onChange={(checked) => toggleCheck(index, checked)}
                 />
 
                 {/* Star */}

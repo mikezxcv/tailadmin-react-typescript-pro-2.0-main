@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
+import { useAuth } from "../context/AuthContext";
 
 // Assume these icons are imported from an icon library
 import {
@@ -22,7 +23,7 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
+let navItems: NavItem[] = [
 
   {
     icon: <PaperPlaneIcon />,
@@ -115,6 +116,45 @@ const supportItems: NavItem[] = [
 
 
 const AppSidebar: React.FC = () => {
+  const { userLoggued } = useAuth();
+
+  // menu for prfile empleado and menu for profile supervisor and menu for profile admin
+  const employeeMenu: NavItem[] = [
+
+    {
+      icon: <PaperPlaneIcon />,
+      name: "Subir Factura",
+      path: "/upload-invoice",
+    },
+    // historial de documentos
+    {
+      icon: <DocsIcon />,
+      name: "Historial de Documentos",
+      path: "/history-invoice",
+    },
+  ]
+
+  const managerMenu: NavItem[] = [
+    {
+      icon: <PaperPlaneIcon />,
+      name: "Subir Factura",
+      path: "/upload-invoice",
+    },
+    // historial de documentos
+    {
+      icon: <DocsIcon />,
+      name: "Historial de Documentos",
+      path: "/history-invoice",
+    },
+  ]
+
+  if (userLoggued?.profiles.includes("empleado")) navItems = employeeMenu;
+  if (userLoggued?.profiles.includes("supervisor")) navItems = managerMenu;
+
+
+
+  console.log("userLoggued appsidebar", userLoggued)
+
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 

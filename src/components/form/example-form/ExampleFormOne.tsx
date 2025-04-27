@@ -9,7 +9,7 @@ import Button from "../../ui/button/Button";
 import { PaperPlaneIcon } from "../../../icons";
 
 export default function ExampleFormOne() {
-  const [message, setMessage] = useState<string>("");
+  const [message] = useState<string>("");
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted:");
@@ -23,10 +23,10 @@ export default function ExampleFormOne() {
   //   console.log("Selected value:", value);
   // };
 
-  const handleTextareaChange = (value: string) => {
-    setMessage(value);
-    console.log("Message:", value);
-  };
+  // const handleTextareaChange = (value: string) => {
+  //   setMessage(value);
+  //   console.log("Message:", value);
+  // };
   return (
     <ComponentCard title="Example Form">
       <Form onSubmit={handleSubmit}>
@@ -63,7 +63,7 @@ export default function ExampleFormOne() {
               placeholder="Type your message here..."
               rows={6}
               value={message}
-              onChange={handleTextareaChange}
+              // onChange={handleTextareaChange}
               className=" bg-gray-50 dark:bg-gray-800"
             />
           </div>

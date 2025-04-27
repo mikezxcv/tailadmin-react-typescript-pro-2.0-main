@@ -5,230 +5,88 @@ import { useState, useMemo } from "react";
 import PaginationWithIcon from "../../components/tables/DataTables/TableOne/PaginationWithIcon";
 import { TableHeader, TableRow, TableCell, TableBody } from "../../components/ui/table";
 import Badge from "../../components/ui/badge/Badge";
-import { PencilIcon, TrashBinIcon, DocsIcon } from "../../icons";
+import { TrashBinIcon, DocsIcon } from "../../icons";
+import { useExpenseReports } from "./api/history.api";
+import { useNavigate } from "react-router";
+import { Modal } from "../../components/ui/modal";
+import { useModal } from "../../hooks/useModal";
+import { useDeleteExpenseReport } from "../Documents/api/expense-report.api";
+import SpinnerFour from "../../components/ui/spinner/SpinnerFour";
+import { useAuth } from "../../context/AuthContext";
+import { UserRole } from "./interfaces/history.interfaces";
 
-
-const tableRowData = [
-    {
-        id: 1,
-        user: {
-            image: "/images/user/user-20.jpg",
-            name: "Abram Schleifer",
-        },
-        position: "Sales Assistant",
-        location: "Edinburgh",
-        age: 57,
-        date: "25 Apr, 2027",
-        salary: "$89,500",
-
-        // values
-        expense_date: "2023-09-01",
-        expense_type: "Comida",
-        amount: "$100",
-        status: "Aprobado",
-    },
-    {
-        id: 2,
-        user: {
-            image: "/images/user/user-21.jpg",
-            name: "Charlotte Anderson",
-        },
-        position: "Marketing Manager",
-        location: "London",
-        age: 42,
-        date: "12 Mar, 2025",
-        salary: "$105,000",
-
-        // values
-        expense_date: "2023-09-02",
-        expense_type: "Transporte",
-        amount: "$200",
-        status: "Pendiente",
-
-    },
-    {
-        id: 3,
-        user: {
-            image: "/images/user/user-22.jpg",
-            name: "Ethan Brown",
-        },
-        position: "Software Engineer",
-        location: "San Francisco",
-        age: 30,
-        date: "01 Jan, 2024",
-        salary: "$120,000",
-
-        // values
-        expense_date: "2023-09-03",
-        expense_type: "Hotel",
-        amount: "$50",
-        status: "Rechazado",
-
-    },
-    {
-        id: 4,
-        user: {
-            image: "/images/user/user-23.jpg",
-            name: "Sophia Martinez",
-        },
-        position: "Product Manager",
-        location: "New York",
-        age: 35,
-        date: "15 Jun, 2026",
-        salary: "$95,000",
-
-        // values
-        expense_date: "2023-09-04",
-        expense_type: "Viaticos",
-        amount: "$300",
-        status: "Aprobado",
-    },
-    {
-        id: 5,
-        user: {
-            image: "/images/user/user-24.jpg",
-            name: "James Wilson",
-        },
-        position: "Data Analyst",
-        location: "Chicago",
-        age: 28,
-        date: "20 Sep, 2025",
-        salary: "$80,000",
-
-        // values
-        expense_date: "2023-09-05",
-        expense_type: "Transporte",
-        amount: "$150",
-        status: "Pendiente",
-
-    },
-    {
-        id: 6,
-        user: {
-            image: "/images/user/user-25.jpg",
-            name: "Olivia Johnson",
-        },
-        position: "HR Specialist",
-        location: "Los Angeles",
-        age: 40,
-        date: "08 Nov, 2026",
-        salary: "$75,000",
-
-        // values
-        expense_date: "2023-09-06",
-        expense_type: "Comida",
-        amount: "$120",
-        status: "Aprobado",
-    },
-    {
-        id: 7,
-        user: {
-            image: "/images/user/user-26.jpg",
-            name: "William John",
-        },
-        position: "Financial Analyst",
-        location: "Seattle",
-        age: 38,
-        date: "03 Feb, 2026",
-        salary: "$88,000",
-
-        // values
-        expense_date: "2023-09-07",
-        expense_type: "Hotel",
-        amount: "$80",
-        status: "Rechazado",
-    },
-    {
-        id: 8,
-        user: {
-            image: "/images/user/user-27.jpg",
-            name: "Isabella Davis",
-        },
-        position: "UI/UX Designer",
-        location: "Austin",
-        age: 29,
-        date: "18 Jul, 2025",
-        salary: "$92,000",
-
-        // values
-        expense_date: "2023-09-08",
-        expense_type: "Viaticos",
-        amount: "$250",
-        status: "Pendiente",
-    },
-    {
-        id: 9,
-        user: {
-            image: "/images/user/user-28.jpg",
-            name: "Liam Moore",
-        },
-        position: "DevOps Engineer",
-        location: "Boston",
-        age: 33,
-        date: "30 Oct, 2024",
-        salary: "$115,000",
-
-        // values
-        expense_date: "2023-09-09",
-        expense_type: "Transporte",
-        amount: "$180",
-        status: "Aprobado",
-    },
-    {
-        id: 10,
-        user: {
-            image: "/images/user/user-29.jpg",
-            name: "Mia Garcia",
-        },
-        position: "Content Strategist",
-        location: "Denver",
-        age: 27,
-        date: "12 Dec, 2027",
-        salary: "$70,000",
-
-        // values
-        expense_date: "2023-09-10",
-        expense_type: "Comida",
-        amount: "$90",
-        status: "Pendiente",
-    },
-];
-
-type SortKey = "name" | "position" | "location" | "age" | "date" | "salary";
+type SortKey = "liquidationType" | "expenseType" | "status" | "invoiceCount";
 type SortOrder = "asc" | "desc";
 
 export default function HistoryInvoice() {
+    const { userLoggued } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortKey, setSortKey] = useState<SortKey>("name");
+    const [sortKey, setSortKey] = useState<SortKey>("liquidationType");
     const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
     const [searchTerm, setSearchTerm] = useState("");
 
+    // Determinar el rol del usuario
+    const userRole = useMemo(() => {
+        if (userLoggued?.profiles.includes('admin')) return UserRole.ADMIN;
+        if (userLoggued?.profiles.includes('supervisor')) return UserRole.MANAGER;
+        if (userLoggued?.profiles.includes('empleado')) return UserRole.EMPLOYEE;
+        return UserRole.ADMIN; // Rol por defecto
+    }, [userLoggued]);
+
+    // Llamada a la API usando el hook unificado
+    const { data: expenseReportsData = [] } = useExpenseReports({
+        enabled: true,
+        role: userRole,
+        userId: userRole !== UserRole.ADMIN ? userLoggued?.id : undefined,
+    });
+
+
+
+    const { mutate: deleteExpenseReport, isPending: isPendingDelete } = useDeleteExpenseReport();
+    const [selectedExpenseReport, setSelectedExpenseReport] = useState<number | null>(null);
+    const navigate = useNavigate();
+
+
+
     const filteredAndSortedData = useMemo(() => {
-        return tableRowData
-            .filter((item) =>
+        return expenseReportsData
+            .map(report => ({
+                id: report.id,
+                liquidationType: report.liquidationType.name,
+                expenseType: report.expenseType.name,
+                status: report.status.name,
+                invoiceCount: report.invoices.length,
+            }))
+            .filter(item =>
                 Object.values(item).some(
-                    (value) =>
+                    value =>
                         typeof value === "string" &&
                         value.toLowerCase().includes(searchTerm.toLowerCase())
                 )
             )
             .sort((a, b) => {
-                if (sortKey === "name") {
-                    return sortOrder === "asc"
-                        ? a.user.name.localeCompare(b.user.name)
-                        : b.user.name.localeCompare(a.user.name);
+                // Ordenamiento primario según sortKey
+                if (sortKey === "liquidationType") {
+                    const compare = a.liquidationType.localeCompare(b.liquidationType);
+                    return sortOrder === "asc" ? compare : -compare;
                 }
-                if (sortKey === "salary") {
-                    const salaryA = Number.parseInt(a[sortKey].replace(/\$|,/g, ""));
-                    const salaryB = Number.parseInt(b[sortKey].replace(/\$|,/g, ""));
-                    return sortOrder === "asc" ? salaryA - salaryB : salaryB - salaryA;
+                if (sortKey === "expenseType") {
+                    const compare = a.expenseType.localeCompare(b.expenseType);
+                    return sortOrder === "asc" ? compare : -compare;
                 }
-                return sortOrder === "asc"
-                    ? String(a[sortKey]).localeCompare(String(b[sortKey]))
-                    : String(b[sortKey]).localeCompare(String(a[sortKey]));
+                if (sortKey === "status") {
+                    const compare = a.status.localeCompare(b.status);
+                    return sortOrder === "asc" ? compare : -compare;
+                }
+                if (sortKey === "invoiceCount") {
+                    const compare = a.invoiceCount - b.invoiceCount;
+                    return sortOrder === "asc" ? compare : -compare;
+                }
+                // Ordenamiento predeterminado por id descendente
+                return b.id - a.id; // Descendente: mayor id primero
             });
-    }, [sortKey, sortOrder, searchTerm]);
+    }, [sortKey, sortOrder, searchTerm, expenseReportsData]);
 
     const totalItems = filteredAndSortedData.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -249,6 +107,39 @@ export default function HistoryInvoice() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
     const currentData = filteredAndSortedData.slice(startIndex, endIndex);
+    console.log("currentData", currentData);
+    const errorModal = useModal();
+
+
+    const handleExpenseReportDetail = (id: number) => {
+        // naviagete to path="/expense-report-detail/:id" 
+
+        navigate(`/expense-report-detail/${id}`);
+    }
+
+    const handleDeleteExpenseReportModal = (id: number) => {
+        errorModal.openModal();
+        setSelectedExpenseReport(id);
+    };
+
+    const confirmDeleteExpenseReport = () => {
+        if (selectedExpenseReport) {
+            deleteExpenseReport(selectedExpenseReport, {
+                onSuccess: () => {
+                    console.log("Expense Report deleted successfully");
+                    errorModal.closeModal();
+                },
+                onError: (error) => {
+                    console.error("Error deleting Expense Report:", error);
+                    errorModal.closeModal();
+                },
+
+            });
+        }
+    }
+
+
+
 
     return (
         <div className="overflow-hidden bg-white dark:bg-white/[0.03] rounded-xl">
@@ -327,10 +218,10 @@ export default function HistoryInvoice() {
                         <TableHeader className="border-t border-gray-100 dark:border-white/[0.05]">
                             <TableRow>
                                 {[
-                                    { key: "expense_date", label: "Fecha del Gasto" },
-                                    { key: "expense_type", label: "Tipo" },
-                                    { key: "amount", label: "Monto" },
-                                    { key: "status", label: "Estado" }
+                                    { key: "liquidationType", label: "Liquidación" },
+                                    { key: "expenseType", label: "Tipo de Gasto" },
+                                    { key: "status", label: "Estado" },
+                                    { key: "invoiceCount", label: "Num Facturas" },
                                 ].map(({ key, label }) => (
                                     <TableCell
                                         key={key}
@@ -346,7 +237,7 @@ export default function HistoryInvoice() {
                                             </p>
                                             <button className="flex flex-col gap-0.5">
                                                 <svg
-                                                    className={`text-gray-300 dark:text-gray-700  ${sortKey === key && sortOrder === "asc"
+                                                    className={`text-gray-300 dark:text-gray-700 ${sortKey === key && sortOrder === "asc"
                                                         ? "text-brand-500"
                                                         : ""
                                                         }`}
@@ -362,7 +253,7 @@ export default function HistoryInvoice() {
                                                     />
                                                 </svg>
                                                 <svg
-                                                    className={`text-gray-300 dark:text-gray-700  ${sortKey === key && sortOrder === "desc"
+                                                    className={`text-gray-300 dark:text-gray-700 ${sortKey === key && sortOrder === "desc"
                                                         ? "text-brand-500"
                                                         : ""
                                                         }`}
@@ -381,19 +272,24 @@ export default function HistoryInvoice() {
                                         </div>
                                     </TableCell>
                                 ))}
+                                <TableCell
+                                    isHeader
+                                    className="px-4 py-3 border border-gray-100 dark:border-white/[0.05]"
+                                >
+                                    <p className="font-medium text-gray-700 text-theme-xs dark:text-gray-400">
+                                        Acciones
+                                    </p>
+                                </TableCell>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {currentData.map((item, i) => (
-                                <TableRow key={i + 1}>
+                                <TableRow key={`${item.id}-${i}`}>
                                     <TableCell className="px-4 py-3 font-normal dark:text-gray-400/90 text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm whitespace-nowrap">
-                                        {item.expense_date}
+                                        {item.liquidationType}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 font-normal dark:text-gray-400/90 text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm whitespace-nowrap">
-                                        {item.expense_type}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3 font-normal dark:text-gray-400/90 text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm whitespace-nowrap">
-                                        {item.amount}
+                                        {item.expenseType}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 font-normal dark:text-gray-400/90 text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm whitespace-nowrap">
                                         <Badge
@@ -406,20 +302,24 @@ export default function HistoryInvoice() {
                                                         : "error"
                                             }
                                             variant="light"
-
                                         >
                                             {item.status}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell className="px-4 py-3 font-normal dark:text-gray-400/90 text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm whitespace-nowrap">
+                                        {item.invoiceCount}
+                                    </TableCell>
                                     <TableCell className="px-4 py-4 font-normal text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm dark:text-white/90 whitespace-nowrap">
                                         <div className="flex items-center w-full gap-2">
-                                            <button className="text-gray-500 hover:text-error-500 dark:text-gray-400 dark:hover:text-error-500">
-                                                <TrashBinIcon className="size-5" />
-                                            </button>
-                                            <button className="text-gray-500 hover:text-blue-800 dark:text-gray-400 dark:hover:text-blue-900">
+                                            {item.status === "Pendiente" && (
+                                                <button className="text-gray-500 hover:text-error-500 dark:text-gray-400 dark:hover:text-error-500">
+                                                    <TrashBinIcon className="size-5" onClick={() => handleDeleteExpenseReportModal(item.id)} />
+                                                </button>
+                                            )}
+                                            {/* <button className="text-gray-500 hover:text-blue-800 dark:text-gray-400 dark:hover:text-blue-900">
                                                 <PencilIcon className="size-5" />
-                                            </button>
-                                            <button className="text-gray-500 hover:text-blue-800 dark:text-gray-400 dark:hover:text-blue-900">
+                                            </button> */}
+                                            <button className="text-gray-500 hover:text-blue-800 dark:text-gray-400 dark:hover:text-blue-900" onClick={() => handleExpenseReportDetail(item.id)}>
                                                 <DocsIcon className="size-5" />
                                             </button>
                                         </div>
@@ -431,9 +331,70 @@ export default function HistoryInvoice() {
                 </div>
             </div>
 
+            {/* Error Modal */}
+            <Modal
+                isOpen={errorModal.isOpen}
+                onClose={errorModal.closeModal}
+                className="max-w-[600px] p-5 lg:p-10"
+            >
+                <div className="text-center">
+                    <div className="relative flex items-center justify-center z-1 mb-7">
+                        <svg
+                            className="fill-error-50 dark:fill-error-500/15"
+                            width="90"
+                            height="90"
+                            viewBox="0 0 90 90"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M34.364 6.85053C38.6205 -2.28351 51.3795 -2.28351 55.636 6.85053C58.0129 11.951 63.5594 14.6722 68.9556 13.3853C78.6192 11.0807 86.5743 21.2433 82.2185 30.3287C79.7862 35.402 81.1561 41.5165 85.5082 45.0122C93.3019 51.2725 90.4628 63.9451 80.7747 66.1403C75.3648 67.3661 71.5265 72.2695 71.5572 77.9156C71.6123 88.0265 60.1169 93.6664 52.3918 87.3184C48.0781 83.7737 41.9219 83.7737 37.6082 87.3184C29.8831 93.6664 18.3877 88.0266 18.4428 77.9156C18.4735 72.2695 14.6352 67.3661 9.22531 66.1403C-0.462787 63.9451 -3.30193 51.2725 4.49185 45.0122C8.84391 41.5165 10.2138 35.402 7.78151 30.3287C3.42572 21.2433 11.3808 11.0807 21.0444 13.3853C26.4406 14.6722 31.9871 11.951 34.364 6.85053Z"
+                                fill=""
+                                fillOpacity=""
+                            />
+                        </svg>
+
+                        <span className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
+                            <svg
+                                className="fill-error-600 dark:fill-error-500"
+                                width="38"
+                                height="38"
+                                viewBox="0 0 38 38"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    clipRule="evenodd"
+                                    d="M9.62684 11.7496C9.04105 11.1638 9.04105 10.2141 9.62684 9.6283C10.2126 9.04252 11.1624 9.04252 11.7482 9.6283L18.9985 16.8786L26.2485 9.62851C26.8343 9.04273 27.7841 9.04273 28.3699 9.62851C28.9556 10.2143 28.9556 11.164 28.3699 11.7498L21.1198 18.9999L28.3699 26.25C28.9556 26.8358 28.9556 27.7855 28.3699 28.3713C27.7841 28.9571 26.8343 28.9571 26.2485 28.3713L18.9985 21.1212L11.7482 28.3715C11.1624 28.9573 10.2126 28.9573 9.62684 28.3715C9.04105 27.7857 9.04105 26.836 9.62684 26.2502L16.8771 18.9999L9.62684 11.7496Z"
+                                    fill=""
+                                />
+                            </svg>
+                        </span>
+                    </div>
+
+                    <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90 sm:text-title-sm">
+                        Eliminar Solicitud!
+                    </h4>
+                    <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
+                        ¿Está seguro de que desea eliminar esta solicitud de reporte de gastos? Esta acción no se puede deshacer.
+                    </p>
+
+                    <div className="flex items-center justify-center w-full gap-3 mt-7">
+                        <button onClick={confirmDeleteExpenseReport}
+                            type="button"
+                            className="flex justify-center w-full px-4 py-3 text-sm font-medium text-white rounded-lg bg-error-500 shadow-theme-xs hover:bg-error-600 sm:w-auto"
+                            disabled={isPendingDelete}
+                        >
+                            {isPendingDelete ? <SpinnerFour color="white" /> : "Confirmar"}
+
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
             <div className="border border-t-0 rounded-b-xl border-gray-100 py-4 pl-[18px] pr-4 dark:border-white/[0.05]">
                 <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between">
-                    {/* Left side: Showing entries */}
                     <div className="pb-3 xl:pb-0">
                         <p className="pb-3 text-sm font-medium text-center text-gray-500 border-b border-gray-100 dark:border-gray-800 dark:text-gray-400 xl:border-b-0 xl:pb-0 xl:text-left">
                             Mostrando {startIndex + 1} a {endIndex} de {totalItems} registros

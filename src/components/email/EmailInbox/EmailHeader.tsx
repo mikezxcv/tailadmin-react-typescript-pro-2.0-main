@@ -11,7 +11,7 @@ interface EmailHeaderProps {
 
 export default function EmailHeader({
   isChecked,
-  onSelectAll,
+  // onSelectAll,
 }: EmailHeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -38,7 +38,9 @@ export default function EmailHeader({
       <div className="flex items-center w-full gap-2">
         <div className="relative w-full sm:w-auto">
           <button className="flex items-center justify-between w-full gap-3 p-3 border border-gray-200 rounded-lg dropdown-toggle dark:border-gray-800 sm:justify-center">
-            <Checkbox checked={isChecked} onChange={onSelectAll} />
+            <Checkbox checked={isChecked} 
+            // onChange={onSelectAll} 
+            />
             <span
               onClick={toggleDropdown}
               className={`${

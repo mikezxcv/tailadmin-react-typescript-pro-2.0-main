@@ -271,7 +271,7 @@ export default function DataTableThree() {
                 >
                   <div className="flex items-center justify-between cursor-pointer">
                     <div className="flex gap-3">
-                      <Checkbox checked={isChecked} onChange={setIsChecked} />
+                      <Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />
                       <span className="font-medium text-gray-700 text-theme-xs dark:text-gray-400">
                         User
                       </span>
@@ -504,7 +504,7 @@ export default function DataTableThree() {
                   <TableCell className="px-4 py-4 border border-gray-100 dark:border-white/[0.05] dark:text-white/90 whitespace-nowrap">
                     <div className="flex gap-3">
                       <div className="mt-1">
-                        <Checkbox checked={isChecked} onChange={setIsChecked} />
+                        <Checkbox checked={isChecked} onChange={(e) => setIsChecked(e.target.checked)} />
                       </div>
                       <div>
                         <p className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
