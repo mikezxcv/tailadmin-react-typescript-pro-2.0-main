@@ -4,6 +4,18 @@ export interface IUser {
     email: string;
 }
 
+export interface ExpenseReportFile {
+    file_mongo_id: string;
+    file_mongo_name: string;
+}
+
+export interface ExpenseReportFileResponse {
+    id: number;
+    fileMongoId: string;
+    fileMongoName: string;
+    publicFileUrl: string;
+}
+
 export interface IReport {
     id: number;
     employeeId: number;
@@ -20,6 +32,7 @@ export interface IReport {
     liquidationType: ILiquidationType;
     expenseType: IExpenseType;
     approvals: IApproval[];
+    files: ExpenseReportFileResponse[];
 }
 
 interface IApproval {

@@ -2,7 +2,6 @@
 import { ChangeEvent, FocusEvent, useState, useEffect, useCallback, useMemo } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import DropZoneSingleFile from "../../components/form/form-elements/DropZoneSingleFile";
 import Button from "../../components/ui/button/Button";
 import SpinnerFour from "../../components/ui/spinner/SpinnerFour";
 import { PaperPlaneIcon } from "../../icons";
@@ -18,10 +17,14 @@ import { useModal } from "../../hooks/useModal";
 import { useExpenseReport, useCurrencyTypes, useExpenseTypes, useLiquidationTypes } from "./api/expense-report.api";
 import { IExpenseReportRequest } from "./interfaces/expense-report.interfaces";
 import { useAuth } from "../../context/AuthContext";
+import DropZoneSingleFile from "../../components/form/form-elements/DropZoneSingleFile";
 
 export default function Upload() {
     const [isLoading, setIsLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [uploadedFiles, setUploadedFiles] = useState<
+        { file_mongo_id: string; file_mongo_name: string }[]
+    >([]); // State to store uploaded file metadata
     const successModal = useModal();
     const { mutate: createExpenseReportApi, isPending } = useExpenseReport();
     const { data: currencyData } = useCurrencyTypes(true);
@@ -193,6 +196,10 @@ export default function Upload() {
     }, [globalErrors, invoiceData]);
 
     const handleScanClick = () => {
+        if (uploadedFiles.length === 0) {
+            alert("Por favor, sube al menos un archivo antes de escanear.");
+            return;
+        }
         setIsLoading(true);
         setTimeout(() => {
             setIsLoading(false);
@@ -204,6 +211,7 @@ export default function Upload() {
         setShowForm(false);
         setIsLoading(false);
         setInvoiceData({});
+        setUploadedFiles([]); // Reset uploaded files
         resetGlobalForm();
         invoices.forEach((invoice) => {
             invoiceForms[invoice.id].resetForm();
@@ -214,6 +222,10 @@ export default function Upload() {
         successModal.closeModal();
         resetForm();
         window.location.reload();
+    };
+
+    const handleFilesUploaded = (files: { file_mongo_id: string; file_mongo_name: string }[]) => {
+        setUploadedFiles(files);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -229,7 +241,7 @@ export default function Upload() {
 
         if (globalFormValid && allInvoicesValid) {
             const createExpenseReportRequest: IExpenseReportRequest = {
-                employee_id: Number(userLoggued?.id), // Hardcoded por ahora; reemplazar con valor dinámico si es necesario
+                employee_id: Number(userLoggued?.id),
                 expense_type_id: Number(globalValues.expenseType),
                 liquidation_type_id: Number(globalValues.settlementType),
                 invoices: invoices.map((invoice) => {
@@ -244,6 +256,7 @@ export default function Upload() {
                         country_name: values.countryName,
                     };
                 }),
+                files: uploadedFiles, // Include uploaded file metadata
             };
 
             createExpenseReportApi(createExpenseReportRequest, {
@@ -251,7 +264,7 @@ export default function Upload() {
                     console.log("Factura registrada:", data);
                     successModal.openModal();
                     resetForm();
-                }
+                },
             });
         } else {
             console.log("Errores en el formulario:", {
@@ -279,6 +292,8 @@ export default function Upload() {
                                 "image/*": [],
                             }}
                             maxFileSize={2 * 1024 * 1024}
+                            maxFiles={5} // Allow up to 5 files
+                            onFilesUploaded={handleFilesUploaded} // Pass callback to receive uploaded file metadata
                         />
                         <Button
                             size="sm"
@@ -303,7 +318,7 @@ export default function Upload() {
                                             Tipo de Gasto <span className="text-red-500">*</span>
                                         </Label>
                                         <Select
-                                            options={(expenseTypesOptions || []).map(option => ({
+                                            options={(expenseTypesOptions || []).map((option) => ({
                                                 value: option.id.toString(),
                                                 label: option.name,
                                             }))}
@@ -321,7 +336,7 @@ export default function Upload() {
                                             Tipo de Liquidación <span className="text-red-500">*</span>
                                         </Label>
                                         <Select
-                                            options={(settlementTypesOptions ?? []).map(option => ({
+                                            options={(settlementTypesOptions ?? []).map((option) => ({
                                                 value: option.id.toString(),
                                                 label: option.name,
                                             }))}
@@ -356,7 +371,9 @@ export default function Upload() {
                                                             name="expenseDate"
                                                             id={`expenseDate-${invoice.id}`}
                                                             value={values.expenseDate}
-                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "expenseDate", e.target.value)}
+                                                            onChange={(e) =>
+                                                                handleInvoiceFormChange(invoice.id, "expenseDate", e.target.value)
+                                                            }
                                                             onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
                                                             error={isFieldInvalid("expenseDate")}
                                                             errorMessage={getFieldError("expenseDate") ?? undefined}
@@ -372,7 +389,9 @@ export default function Upload() {
                                                             name="countryName"
                                                             id={`countryName-${invoice.id}`}
                                                             value={values.countryName}
-                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "countryName", e.target.value)}
+                                                            onChange={(e) =>
+                                                                handleInvoiceFormChange(invoice.id, "countryName", e.target.value)
+                                                            }
                                                             onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
                                                             error={isFieldInvalid("countryName")}
                                                             errorMessage={getFieldError("countryName") ?? undefined}
@@ -388,7 +407,9 @@ export default function Upload() {
                                                             name="companyName"
                                                             id={`companyName-${invoice.id}`}
                                                             value={values.companyName}
-                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "companyName", e.target.value)}
+                                                            onChange={(e) =>
+                                                                handleInvoiceFormChange(invoice.id, "companyName", e.target.value)
+                                                            }
                                                             onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
                                                             error={isFieldInvalid("companyName")}
                                                             errorMessage={getFieldError("companyName") ?? undefined}
@@ -404,7 +425,9 @@ export default function Upload() {
                                                             name="localAmount"
                                                             id={`localAmount-${invoice.id}`}
                                                             value={values.localAmount}
-                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "localAmount", e.target.value)}
+                                                            onChange={(e) =>
+                                                                handleInvoiceFormChange(invoice.id, "localAmount", e.target.value)
+                                                            }
                                                             onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
                                                             error={isFieldInvalid("localAmount")}
                                                             errorMessage={getFieldError("localAmount") ?? undefined}
@@ -417,14 +440,16 @@ export default function Upload() {
                                                             Moneda <span className="text-red-500">*</span>
                                                         </Label>
                                                         <Select
-                                                            options={currenciesOptions.map(option => ({
+                                                            options={currenciesOptions.map((option) => ({
                                                                 value: option.id.toString(),
                                                                 label: option.description,
                                                             }))}
                                                             placeholder="Seleccionar moneda"
                                                             name="currency"
                                                             value={values.currency.toString()}
-                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "currency", Number(e.target.value))}
+                                                            onChange={(e) =>
+                                                                handleInvoiceFormChange(invoice.id, "currency", Number(e.target.value))
+                                                            }
                                                             onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
                                                             error={isFieldInvalid("currency")}
                                                             errorMessage={getFieldError("currency") ?? undefined}
@@ -440,7 +465,9 @@ export default function Upload() {
                                                             name="exchangeRate"
                                                             id={`exchangeRate-${invoice.id}`}
                                                             value={values.exchangeRate}
-                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "exchangeRate", e.target.value)}
+                                                            onChange={(e) =>
+                                                                handleInvoiceFormChange(invoice.id, "exchangeRate", e.target.value)
+                                                            }
                                                             onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
                                                             error={isFieldInvalid("exchangeRate")}
                                                             errorMessage={getFieldError("exchangeRate") ?? undefined}
@@ -458,7 +485,9 @@ export default function Upload() {
                                                             name="usdAmount"
                                                             id={`usdAmount-${invoice.id}`}
                                                             value={values.usdAmount}
-                                                            onChange={(e) => handleInvoiceFormChange(invoice.id, "usdAmount", e.target.value)}
+                                                            onChange={(e) =>
+                                                                handleInvoiceFormChange(invoice.id, "usdAmount", e.target.value)
+                                                            }
                                                             onBlur={(e) => handleInvoiceFormBlur(invoice.id, e)}
                                                             error={isFieldInvalid("usdAmount")}
                                                             errorMessage={getFieldError("usdAmount") ?? undefined}

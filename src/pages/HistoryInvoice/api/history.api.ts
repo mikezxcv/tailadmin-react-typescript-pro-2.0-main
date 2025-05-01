@@ -22,16 +22,16 @@ import { IReport, UserRole } from "../interfaces/history.interfaces";
 //   });
 // }
 
-// export const useExpenseReportsToEmployee = (enabled: boolean, employeeId: number) => {
-//   return useQuery({
-//     queryKey: ["expense-reports-to-employee"],
-//     queryFn: (): Promise<IReport[]> =>
-//       appService
-//         .get(`/invoice/expense-reports-to-employee/${employeeId}`)
-//         .then((res) => res.data),
-//     enabled,
-//   });
-// }
+export const useExpenseReportsToEmployee = (enabled: boolean, employeeId: number) => {
+  return useQuery({
+    queryKey: ["expense-reports-to-employee"],
+    queryFn: (): Promise<IReport[]> =>
+      appService
+        .get(`/invoice/expense-reports-to-employee/${employeeId}`)
+        .then((res) => res.data),
+    enabled,
+  });
+}
 
 interface UseExpenseReportsParams {
   enabled: boolean;
@@ -60,5 +60,17 @@ export const useExpenseReports = ({ enabled, role, userId }: UseExpenseReportsPa
     enabled: enabled && (role === UserRole.ADMIN || !!userId), // Solo habilita si userId está presente para roles no admin
   });
 };
+
+// GET EXPENSE REPORTS FROM MANAGER|
+export const useExpenseReportsManager = (enabled: boolean, employeeId: number) => {
+  return useQuery({
+    queryKey: ["expense-reports-manager"],
+    queryFn: (): Promise<IReport[]> =>
+      appService
+        .get(`/invoice/expense-reports-to-employee/${employeeId}`)
+        .then((res) => res.data),
+    enabled,
+  });
+}
 
 

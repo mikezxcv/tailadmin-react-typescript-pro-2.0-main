@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/common/ProtectedRoute";
 import NotFound from "./pages/OtherPage/NotFound";
 import ExpenseReportDetail from "./pages/HistoryInvoice/ExpenseReporDetail";
+import HistoryInvoiceManager from "./pages/HistoryInvoice/HistoryManager";
 
 export default function App() {
 
@@ -35,6 +36,7 @@ export default function App() {
                 <Route index path="/" element={<Upload />} />
                 <Route path="/upload-invoice" element={<Upload />} />
                 <Route path="/history-invoice" element={<HistoryInvoice />} />
+                <Route path="/history-invoice/manager" element={<HistoryInvoiceManager />} />
                 <Route path="/expense-report-detail/:id" element={<ExpenseReportDetail />} />
               </Route>
             </Route>

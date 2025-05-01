@@ -89,16 +89,41 @@ export interface InvoiceRequest {
     company_name: string;
     country_name: string;
 }
+export interface ExpenseReportFile {
+    file_mongo_id: string;
+    file_mongo_name: string;
+}
 
 export interface IExpenseReportRequest {
     employee_id: number;
     expense_type_id: number;
     liquidation_type_id: number;
     invoices: InvoiceRequest[];
+    files: ExpenseReportFile[];
 }
 
 export interface IApproveRejectRequest {
     report_id: number;
     comments: string;
     supervisor_id: number;
+}
+
+export interface IUploadFileRequest {
+    files: File[];
+    bucketName?: string;
+}
+
+
+export interface IUploadFileResponse {
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    id: string;
+    filename: string;
+    metadata: null;
+    bucketName: string;
+    chunkSize: number;
+    size: number;
+    uploadDate: string;
+    contentType: string;
 }

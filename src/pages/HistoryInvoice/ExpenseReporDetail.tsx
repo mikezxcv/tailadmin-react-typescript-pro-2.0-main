@@ -19,6 +19,7 @@ import { useAuth } from "../../context/AuthContext";
 import { IApproveRejectRequest } from "../Documents/interfaces/expense-report.interfaces";
 import { useNavigate } from "react-router"
 import Badge from "../../components/ui/badge/Badge";
+import ExpenseReportFiles from "./ExpenseReportFiles";
 
 export default function ExpenseReportDetail() {
     const { id } = useParams<{ id: string }>();
@@ -173,6 +174,11 @@ export default function ExpenseReportDetail() {
                 description="View and manage expense report details"
             />
             <PageBreadcrumb pageTitle="Aprobar" />
+            <div className="mb-6">
+                {expenseReportDetail && (
+                    <ExpenseReportFiles expenseReport={expenseReportDetail} />
+                )}
+            </div>
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-1">
                 <div className="space-y-6">
                     <Form onSubmit={() => { }} className="space-y-6">
@@ -248,7 +254,7 @@ export default function ExpenseReportDetail() {
                                     />
                                 </div>
                             </div>
-                            <h3 className="text-lg font-semibold mt-6 mb-4">Facturas</h3>
+                            <h3 className="text-lg font-semibold mt-6 mb-4 dark:text-white/90">Facturas</h3>
                             <div className="space-y-6">
                                 {expenseReportDetail?.invoices?.map((invoice) => {
                                     const { values } = invoiceForms[invoice.id] || {};

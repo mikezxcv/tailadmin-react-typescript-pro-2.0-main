@@ -143,9 +143,14 @@ const AppSidebar: React.FC = () => {
     // historial de documentos
     {
       icon: <DocsIcon />,
-      name: "Historial de Documentos",
+      name: "Documentos (Empleados)",
       path: "/history-invoice",
     },
+    {
+      icon: <DocsIcon />,
+      name: "Mis Documentos",
+      path: "/history-invoice/manager",
+    }
   ]
 
   if (userLoggued?.profiles.includes("empleado")) navItems = employeeMenu;

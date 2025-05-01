@@ -1,9 +1,11 @@
 import ComponentCard from "../../common/ComponentCard";
 import { useDropzone } from "react-dropzone";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Alert from "../../ui/alert/Alert";
 import SpinnerTwo from "../../ui/spinner/SpinnerTwo";
 import { CloseIcon, FileIcon } from "../../../icons";
+import { useUploadFile } from "../../../pages/Documents/api/mongo.api";
+import { IUploadFileResponse } from "../../../pages/Documents/interfaces/expense-report.interfaces";
 
 interface DropZoneMultipleFilesProps {
     title?: string;
@@ -11,11 +13,13 @@ interface DropZoneMultipleFilesProps {
     acceptedFileTypes?: { [key: string]: string[] };
     maxFileSize?: number;
     maxFiles?: number;
+    onFilesUploaded?: (uploadedFiles: { file_mongo_id: string; file_mongo_name: string }[]) => void; // Callback to pass uploaded file metadata
 }
 
 interface FileWithStatus {
     file: File;
     isLoading: boolean;
+    uploadResponse?: IUploadFileResponse; // Store the upload response
 }
 
 const DropZoneMultipleFiles: React.FC<DropZoneMultipleFilesProps> = ({
@@ -24,35 +28,62 @@ const DropZoneMultipleFiles: React.FC<DropZoneMultipleFilesProps> = ({
     acceptedFileTypes,
     maxFileSize = 5 * 1024 * 1024, // Default to 5MB per file
     maxFiles = 5, // Default to 5 files
+    onFilesUploaded,
 }) => {
     const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const { mutate: uploadFiles } = useUploadFile(); // Use the upload mutation
 
-    const onDrop = (acceptedFiles: File[]) => {
-        // Map new files to FileWithStatus objects
-        const newFiles = acceptedFiles.map(file => ({
-            file,
-            isLoading: true
-        }));
+    const onDrop = useCallback(
+        (acceptedFiles: File[]) => {
+            // Map new files to FileWithStatus objects
+            const newFiles: FileWithStatus[] = acceptedFiles.map((file) => ({
+                file,
+                isLoading: true,
+            }));
 
-        // Add new files to existing ones, ensuring we don't exceed maxFiles
-        setFilesWithStatus(prev => {
-            const updatedFiles = [...prev, ...newFiles].slice(0, maxFiles);
-            return updatedFiles;
-        });
-        setErrorMessage(null); // Clear any previous error
+            // Add new files to existing ones, ensuring we don't exceed maxFiles
+            setFilesWithStatus((prev) => {
+                const updatedFiles = [...prev, ...newFiles].slice(0, maxFiles);
+                return updatedFiles;
+            });
+            setErrorMessage(null); // Clear any previous error
 
-        // Simulate upload completion for each file after 1 second
-        setTimeout(() => {
-            setFilesWithStatus(prev =>
-                prev.map(f =>
-                    newFiles.some(nf => nf.file === f.file)
-                        ? { ...f, isLoading: false }
-                        : f
-                )
+            // Upload files to the API
+            uploadFiles(
+                { files: acceptedFiles, bucketName: "app_gastos" }, // Adjust bucketName as needed
+                {
+                    onSuccess: (responses) => {
+                        // Update files with upload responses
+                        setFilesWithStatus((prev) =>
+                            prev.map((f) => {
+                                const response = responses.find((r) => r.originalname === f.file.name);
+                                return response ? { ...f, isLoading: false, uploadResponse: response } : f;
+                            })
+                        );
+
+                        // Pass uploaded file metadata to parent component
+                        if (onFilesUploaded) {
+                            const uploadedFiles = responses.map((res) => ({
+                                file_mongo_id: res.id,
+                                file_mongo_name: res.filename,
+                            }));
+                            onFilesUploaded(uploadedFiles);
+                        }
+                    },
+                    onError: (error) => {
+                        setErrorMessage(`Error al subir archivos: ${error.message}`);
+                        setFilesWithStatus((prev) =>
+                            prev.map((f) =>
+                                newFiles.some((nf) => nf.file === f.file) ? { ...f, isLoading: false } : f
+                            )
+                        );
+                    },
+                }
             );
-        }, 1000);
-    };
+        },
+        [uploadFiles, maxFiles, onFilesUploaded]
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const onDropRejected = (fileRejections: any[]) => {
@@ -60,12 +91,12 @@ const DropZoneMultipleFiles: React.FC<DropZoneMultipleFilesProps> = ({
             const error = rejection.errors[0];
             if (error.code === "file-too-large") {
                 setErrorMessage(
-                    `File ${rejection.file.name} is too large. Maximum file size is ${(maxFileSize / (1024 * 1024)).toFixed(2)} MB.`
+                    `Archivo ${rejection.file.name} demasiado grande. El tamaño máximo es ${(maxFileSize / (1024 * 1024)).toFixed(2)} MB.`
                 );
             } else if (error.code === "too-many-files") {
-                setErrorMessage(`Cannot upload more than ${maxFiles} files.`);
+                setErrorMessage(`No se puede subir más de ${maxFiles} archivos.`);
             } else {
-                setErrorMessage(`File ${rejection.file.name} is not accepted.`);
+                setErrorMessage(`Archivo ${rejection.file.name} no es permitido.`);
             }
         });
     };
@@ -86,8 +117,19 @@ const DropZoneMultipleFiles: React.FC<DropZoneMultipleFilesProps> = ({
 
     // Remove a specific file
     const removeFile = (fileToRemove: File) => {
-        setFilesWithStatus(prev => prev.filter(f => f.file !== fileToRemove));
+        setFilesWithStatus((prev) => prev.filter((f) => f.file !== fileToRemove));
         setErrorMessage(null);
+
+        // Update parent with remaining files
+        if (onFilesUploaded) {
+            const remainingFiles = filesWithStatus
+                .filter((f) => f.file !== fileToRemove && f.uploadResponse)
+                .map((f) => ({
+                    file_mongo_id: f.uploadResponse!.id,
+                    file_mongo_name: f.uploadResponse!.filename,
+                }));
+            onFilesUploaded(remainingFiles);
+        }
     };
 
     // Prevent form submission
