@@ -175,7 +175,7 @@ export default function ExpenseReportDetail() {
             />
             <PageBreadcrumb pageTitle="Aprobar" />
             <div className="mb-6">
-                {expenseReportDetail && (
+                {expenseReportDetail?.files && expenseReportDetail?.files.length > 0 && (
                     <ExpenseReportFiles expenseReport={expenseReportDetail} />
                 )}
             </div>

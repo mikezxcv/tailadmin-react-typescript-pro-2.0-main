@@ -33,9 +33,14 @@ let navItems: NavItem[] = [
   // historial de documentos
   {
     icon: <DocsIcon />,
-    name: "Historial de Documentos",
+    name: "Documentos (Empleados)",
     path: "/history-invoice",
   },
+  {
+    icon: <DocsIcon />,
+    name: "Mis Documentos",
+    path: "/history-invoice/manager",
+  }
 
 ];
 

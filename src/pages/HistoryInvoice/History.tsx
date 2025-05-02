@@ -14,16 +14,17 @@ import { useDeleteExpenseReport } from "../Documents/api/expense-report.api";
 import SpinnerFour from "../../components/ui/spinner/SpinnerFour";
 import { useAuth } from "../../context/AuthContext";
 import { UserRole } from "./interfaces/history.interfaces";
+import AvatarText from "../../components/ui/avatar/AvatarText";
 
-type SortKey = "liquidationType" | "expenseType" | "status" | "invoiceCount";
+type SortKey = "liquidationType" | "expenseType" | "status" | "invoiceCount" | "name" | "reportDate" | "id";
 type SortOrder = "asc" | "desc";
 
-export default function HistoryInvoice() {
+export default function History() {
     const { userLoggued } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortKey, setSortKey] = useState<SortKey>("liquidationType");
-    const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+    const [sortKey, setSortKey] = useState<SortKey>("id");
+    const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
     const [searchTerm, setSearchTerm] = useState("");
 
     // Determinar el rol del usuario
@@ -33,6 +34,7 @@ export default function HistoryInvoice() {
         if (userLoggued?.profiles.includes('empleado')) return UserRole.EMPLOYEE;
         return UserRole.ADMIN; // Rol por defecto
     }, [userLoggued]);
+    console.log("userRole", userRole);
 
     // Llamada a la API usando el hook unificado
     const { data: expenseReportsData = [] } = useExpenseReports({
@@ -40,9 +42,6 @@ export default function HistoryInvoice() {
         role: userRole,
         userId: userRole !== UserRole.ADMIN ? userLoggued?.id : undefined,
     });
-
-
-
     const { mutate: deleteExpenseReport, isPending: isPendingDelete } = useDeleteExpenseReport();
     const [selectedExpenseReport, setSelectedExpenseReport] = useState<number | null>(null);
     const navigate = useNavigate();
@@ -57,6 +56,9 @@ export default function HistoryInvoice() {
                 expenseType: report.expenseType.name,
                 status: report.status.name,
                 invoiceCount: report.invoices.length,
+                employee: report.employee,
+
+                reportDate: report.reportDate
             }))
             .filter(item =>
                 Object.values(item).some(
@@ -83,6 +85,16 @@ export default function HistoryInvoice() {
                     const compare = a.invoiceCount - b.invoiceCount;
                     return sortOrder === "asc" ? compare : -compare;
                 }
+
+                if (sortKey === "name") {
+                    const compare = a.employee.name.localeCompare(b.employee.name);
+                    return sortOrder === "asc" ? compare : -compare;
+                }
+                if (sortKey === "reportDate") {
+                    const dateA = new Date(a.reportDate).getTime();
+                    const dateB = new Date(b.reportDate).getTime();
+                    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+                }
                 // Ordenamiento predeterminado por id descendente
                 return b.id - a.id; // Descendente: mayor id primero
             });
@@ -96,6 +108,9 @@ export default function HistoryInvoice() {
     };
 
     const handleSort = (key: SortKey) => {
+        console.log("key", key);
+        console.log("sortKey", sortKey);
+        console.log("sortOrder", sortOrder);
         if (sortKey === key) {
             setSortOrder(sortOrder === "asc" ? "desc" : "asc");
         } else {
@@ -222,6 +237,9 @@ export default function HistoryInvoice() {
                                     { key: "expenseType", label: "Tipo de Gasto" },
                                     { key: "status", label: "Estado" },
                                     { key: "invoiceCount", label: "Num Facturas" },
+                                    { key: "employee.name", label: "Solicitante" },
+                                    { key: "reportDate", label: "Fecha Solicitud" },
+
                                 ].map(({ key, label }) => (
                                     <TableCell
                                         key={key}
@@ -308,6 +326,25 @@ export default function HistoryInvoice() {
                                     </TableCell>
                                     <TableCell className="px-4 py-3 font-normal dark:text-gray-400/90 text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm whitespace-nowrap">
                                         {item.invoiceCount}
+                                    </TableCell>
+                                    <TableCell className="px-4 sm:px-6 py-3.5">
+                                        <div className="flex items-center gap-3">
+                                            <AvatarText name={item.employee.name} className="w-10 h-10" />
+                                            <div>
+                                                <span className="mb-0.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
+                                                    {item.employee.name}
+                                                </span>
+                                                <span className="text-gray-500 text-theme-sm dark:text-gray-400">
+                                                    {item.employee.email}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    {/* <TableCell className="px-4 py-3 font-normal dark:text-gray-400/90 text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm whitespace-nowrap">
+                                        {item.employeeName}
+                                    </TableCell> */}
+                                    <TableCell className="px-4 py-3 font-normal dark:text-gray-400/90 text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm whitespace-nowrap">
+                                        {item.reportDate}
                                     </TableCell>
                                     <TableCell className="px-4 py-4 font-normal text-gray-800 border border-gray-100 dark:border-white/[0.05] text-theme-sm dark:text-white/90 whitespace-nowrap">
                                         <div className="flex items-center w-full gap-2">
